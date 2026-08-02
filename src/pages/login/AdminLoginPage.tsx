@@ -1,20 +1,15 @@
 import React from 'react'
-import Link from 'next/link'
-import { Building2, ArrowLeft, QrCode, Users, Layers, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShieldCheck, ArrowLeft, BarChart3, ShieldAlert, Lock } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AnimatedGradientBg } from '@/components/ui/animated-gradient-bg'
 import { RoleLoginForm } from '@/components/auth/role-login-form'
 import { Badge } from '@/components/ui/badge'
 
-export const metadata = {
-  title: 'Organizer Portal Login | Campus Pulse',
-  description: 'Sign in to the Organizer Portal to publish events, scan participant QR codes, and view registration analytics.',
-}
-
-export default function OrganizerLoginPage() {
+export default function AdminLoginPage() {
   return (
-    <AnimatedGradientBg accentColor="organizer">
+    <AnimatedGradientBg accentColor="admin">
       <div className="flex min-h-dvh flex-col">
         <SiteHeader />
 
@@ -23,7 +18,7 @@ export default function OrganizerLoginPage() {
             {/* Back Button */}
             <div className="mb-6">
               <Link
-                href="/login"
+                to="/login"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors bg-white/60 px-3 py-1.5 rounded-full border border-slate-200/80 backdrop-blur-md"
               >
                 <ArrowLeft className="size-3.5" />
@@ -32,64 +27,64 @@ export default function OrganizerLoginPage() {
             </div>
 
             <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
-              {/* Left Column: Organizer Information & Features */}
+              {/* Left Column: Admin Information & Governance Controls */}
               <div className="lg:col-span-6 space-y-6">
                 <div>
-                  <Badge className="bg-purple-500/10 text-purple-700 border-purple-300 dark:text-purple-300 mb-3 px-3 py-1 text-xs">
-                    <Building2 className="size-3.5 mr-1.5 inline" />
-                    Event Organizer Portal
+                  <Badge className="bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-300 mb-3 px-3 py-1 text-xs">
+                    <ShieldCheck className="size-3.5 mr-1.5 inline" />
+                    Campus Administration Portal
                   </Badge>
                   <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-                    Streamline Campus Event Operations
+                    Central Governance & Campus Analytics
                   </h1>
                   <p className="mt-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Log in with your Faculty or Club Organizer ID to create new events, broadcast live announcements, and scan QR passes at the entrance.
+                    Log in with your Administrator credentials or Security Passcode to audit campus-wide events, manage organizer permissions, and review analytics.
                   </p>
                 </div>
 
                 {/* Feature List */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-start gap-3 rounded-2xl bg-white/70 p-3.5 border border-slate-200/60 backdrop-blur-md dark:bg-slate-900/60 dark:border-slate-800">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-                      <QrCode className="size-4" />
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                      <BarChart3 className="size-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">High-Speed Scanner & Check-in</h4>
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Campus-Wide Participation Metrics</h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Scan student QR tickets using any device camera or enter code manually for instant check-in.
+                        View total registrations, ticket revenue, department turnout, and capacity utilization across all clubs.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 rounded-2xl bg-white/70 p-3.5 border border-slate-200/60 backdrop-blur-md dark:bg-slate-900/60 dark:border-slate-800">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                      <Users className="size-4" />
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                      <ShieldAlert className="size-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Real-Time Registration Roster</h4>
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Event Approval & Compliance</h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Monitor live attendance numbers, paid/unpaid status, and download participant lists.
+                        Review submitted event proposals, venue allocation requests, and grant approval badges.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 rounded-2xl bg-white/70 p-3.5 border border-slate-200/60 backdrop-blur-md dark:bg-slate-900/60 dark:border-slate-800">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300">
-                      <Layers className="size-4" />
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                      <Lock className="size-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Broadcast Alerts & Announcements</h4>
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Role Management & System Logs</h4>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Send instant notification updates to all registered attendees for venue changes or schedule shifts.
+                        Manage organizer privileges, inspect security audit logs, and maintain system data integrity.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Dedicated Organizer Login Form */}
+              {/* Right Column: Dedicated Admin Login Form */}
               <div className="lg:col-span-6">
-                <RoleLoginForm initialRole="organizer" showRoleTabs={false} redirectUrl="/dashboard" />
+                <RoleLoginForm initialRole="admin" showRoleTabs={false} redirectUrl="/dashboard" />
               </div>
             </div>
           </div>

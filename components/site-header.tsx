@@ -1,7 +1,4 @@
-'use client'
-
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation } from 'react-router-dom'
 
 import { useState } from 'react'
 import {
@@ -13,11 +10,6 @@ import {
   TicketIcon,
   XIcon,
   ZapIcon,
-  LogInIcon,
-  GraduationCap,
-  Building2,
-  ShieldCheck,
-  ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
@@ -32,7 +24,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import type { Role } from '@/lib/types'
 
 const links = [
   { href: '/', label: 'Home', icon: ZapIcon },
@@ -42,8 +33,9 @@ const links = [
 ]
 
 export function SiteHeader() {
-  const pathname = usePathname()
-  const { role, setRole, user, announcements, markAllAnnouncementsRead, getEvent } =
+  const location = useLocation()
+  const pathname = location.pathname
+  const { role, user, announcements, markAllAnnouncementsRead, getEvent } =
     useStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const unread = announcements.filter((a) => !a.read).length
@@ -51,7 +43,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl print-hide">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <QrCodeIcon className="size-5" />
           </span>
@@ -74,7 +66,7 @@ export function SiteHeader() {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 className={cn(
                   'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   active
@@ -138,7 +130,7 @@ export function SiteHeader() {
           </Popover>
 
           {/* Profile Badge & Avatar */}
-          <Link href="/login" className="hidden sm:flex items-center gap-2">
+          <Link to="/login" className="hidden sm:flex items-center gap-2">
             <Avatar className="size-8">
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                 {user.name
@@ -171,7 +163,7 @@ export function SiteHeader() {
             {links.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                to={link.href}
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >

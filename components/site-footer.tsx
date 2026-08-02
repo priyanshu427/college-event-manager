@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { QrCodeIcon } from 'lucide-react'
 import { COLLEGE_NAME } from '@/lib/seed-data'
 
@@ -49,7 +49,7 @@ export function SiteFooter() {
                 {column.items.map((item) => (
                   <li key={item.label}>
                     <Link
-                      href={item.href}
+                      to={item.href}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {item.label}

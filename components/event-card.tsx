@@ -1,7 +1,4 @@
-'use client'
-
-import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import {
   ArrowRightIcon,
   CheckCircle2Icon,
@@ -47,12 +44,10 @@ export function EventCard({
   return (
     <Card className="group flex flex-col gap-0 overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative aspect-16/9 overflow-hidden">
-        <Image
+        <img
           src={event.image || '/placeholder.svg'}
           alt={`${event.title} at the campus`}
-          fill
-          sizes="(min-width: 1024px) 400px, 100vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
         <div className="absolute top-3 left-3 flex flex-col items-center rounded-xl bg-background/90 px-2.5 py-1.5 text-center backdrop-blur">
@@ -132,7 +127,7 @@ export function EventCard({
         <Button
           size="sm"
           variant={registered ? 'outline' : 'default'}
-          render={<Link href={`/events/${event.id}`} />}
+          render={<Link to={`/events/${event.id}`} />}
         >
           {registered ? 'View pass' : 'Register'}
           <ArrowRightIcon data-icon="inline-end" />

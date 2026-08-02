@@ -1,16 +1,9 @@
 import React from 'react'
-import Link from 'next/link'
-import { GraduationCap, Building2, ShieldCheck, ArrowRight, QrCode, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { AnimatedGradientBg } from '@/components/ui/animated-gradient-bg'
 import { RoleLoginForm } from '@/components/auth/role-login-form'
-import { Badge } from '@/components/ui/badge'
-
-export const metadata = {
-  title: 'Portal Selection & Login | Campus Pulse',
-  description: 'Login to your student, organizer, or administrator portal at Campus Pulse.',
-}
 
 export default function CentralLoginPage() {
   return (
@@ -36,7 +29,6 @@ export default function CentralLoginPage() {
 
             {/* Main Interactive Role Login Form */}
             <RoleLoginForm initialRole="student" showRoleTabs={true} />
-
           </div>
         </main>
 

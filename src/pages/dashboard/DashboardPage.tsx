@@ -1,29 +1,22 @@
-'use client'
-
 import React, { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   Plus,
   QrCode,
   Users,
-  Bell,
   CheckCircle2,
   Trash2,
-  Edit,
   Search,
   RefreshCw,
-  Sparkles,
   Shield,
-  Building,
   Calendar,
   DollarSign,
   AlertTriangle,
-  FileSpreadsheet,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
-import type { EventCategory, EventItem, EventStatus } from '@/lib/types'
-import { EVENT_CATEGORIES, formatFee, formatTime } from '@/lib/format'
+import type { EventCategory } from '@/lib/types'
+import { EVENT_CATEGORIES, formatFee } from '@/lib/format'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { Button } from '@/components/ui/button'
@@ -58,7 +51,6 @@ export default function DashboardPage() {
     registrations,
     announcements,
     createEvent,
-    updateEvent,
     deleteEvent,
     checkInByCode,
     setCheckedIn,
@@ -451,7 +443,7 @@ export default function DashboardPage() {
                           <span>Fee: {formatFee(event.fee)}</span>
                         </div>
                         <div className="flex gap-2 pt-1">
-                          <Button variant="outline" size="sm" className="w-full text-xs" render={<Link href={`/events/${event.id}`} />}>
+                          <Button variant="outline" size="sm" className="w-full text-xs" render={<Link to={`/events/${event.id}`} />}>
                             View Event Page
                           </Button>
                         </div>
@@ -694,7 +686,6 @@ export default function DashboardPage() {
                           </Select>
                         </div>
                       </div>
-
 
                       <Button type="submit" className="w-full h-10 text-xs font-semibold rounded-xl mt-2">
                         Post Announcement

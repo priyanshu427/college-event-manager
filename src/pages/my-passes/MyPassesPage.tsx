@@ -1,19 +1,14 @@
-'use client'
-
 import React, { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import {
   Ticket,
-  QrCode,
   Calendar,
   Clock,
   MapPin,
   Trash2,
   Printer,
   CheckCircle2,
-  AlertCircle,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
@@ -22,8 +17,7 @@ import { SiteFooter } from '@/components/site-footer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatDateTime, dayOfMonth, monthLabel, formatTime } from '@/lib/format'
-import { cn } from '@/lib/utils'
+import { formatTime } from '@/lib/format'
 
 function PassQrCode({ code }: { code: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -45,8 +39,7 @@ function PassQrCode({ code }: { code: string }) {
 }
 
 export default function MyPassesPage() {
-  const { myRegistrations, getEvent, cancelRegistration, user } = useStore()
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const { myRegistrations, getEvent, cancelRegistration } = useStore()
 
   const handleCancelPass = (id: string) => {
     if (confirm('Are you sure you want to cancel this event registration?')) {
@@ -96,7 +89,7 @@ export default function MyPassesPage() {
               <p className="mt-2 text-sm text-muted-foreground max-w-md">
                 You haven't registered for any campus events yet. Explore upcoming hackathons, fests, and workshops!
               </p>
-              <Button className="mt-6 rounded-xl font-semibold gap-2" render={<Link href="/events" />}>
+              <Button className="mt-6 rounded-xl font-semibold gap-2" render={<Link to="/events" />}>
                 Browse Upcoming Events
                 <ArrowRight className="size-4" />
               </Button>
@@ -204,7 +197,7 @@ export default function MyPassesPage() {
                           Cancel Pass
                         </Button>
 
-                        <Button variant="outline" size="sm" render={<Link href={`/events/${event.id}`} />} className="text-xs">
+                        <Button variant="outline" size="sm" render={<Link to={`/events/${event.id}`} />} className="text-xs">
                           Event Details
                         </Button>
                       </div>

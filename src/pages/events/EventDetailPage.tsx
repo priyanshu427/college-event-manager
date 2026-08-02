@@ -1,9 +1,5 @@
-'use client'
-
-import React, { useState, use } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import React, { useState } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   Calendar,
@@ -13,13 +9,6 @@ import {
   CheckCircle2,
   Ticket,
   Sparkles,
-  Building,
-  DollarSign,
-  User,
-  Mail,
-  Phone,
-  School,
-  IdCard,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { categoryStyles, dayOfMonth, monthLabel, formatFee, formatTime } from '@/lib/format'
@@ -32,12 +21,12 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
-export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
-  const router = useRouter()
+export default function EventDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { getEvent, isRegistered, register, registrationsFor, user } = useStore()
 
-  const event = getEvent(resolvedParams.id)
+  const event = id ? getEvent(id) : undefined
   const registered = event ? isRegistered(event.id) : false
   const registrations = event ? registrationsFor(event.id) : []
   const seatsTaken = registrations.length
@@ -66,7 +55,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           <p className="mt-2 text-sm text-muted-foreground">
             The event you are looking for does not exist or has been removed.
           </p>
-          <Button className="mt-4" render={<Link href="/events" />}>
+          <Button className="mt-4" render={<Link to="/events" />}>
             Browse All Events
           </Button>
         </main>
@@ -108,7 +97,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           {/* Back Button */}
           <div className="mb-6">
             <Link
-              href="/events"
+              to="/events"
               className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="size-3.5" />
@@ -119,12 +108,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           {/* Hero Banner */}
           <div className="relative overflow-hidden rounded-3xl border bg-card shadow-sm mb-8">
             <div className="relative aspect-21/9 w-full overflow-hidden bg-muted">
-              <Image
+              <img
                 src={event.image || '/placeholder.svg'}
                 alt={event.title}
-                fill
-                priority
-                className="object-cover"
+                className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
@@ -212,7 +199,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                       <CheckCircle2 className="size-4 mr-1.5 inline" />
                       You Are Registered
                     </Badge>
-                    <Button variant="outline" render={<Link href="/my-passes" />}>
+                    <Button variant="outline" render={<Link to="/my-passes" />}>
                       <Ticket className="size-4 mr-1.5" />
                       View Pass
                     </Button>
@@ -244,7 +231,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             <Button onClick={() => setModalOpen(false)} variant="outline">
                               Close
                             </Button>
-                            <Button render={<Link href="/my-passes" />}>
+                            <Button render={<Link to="/my-passes" />}>
                               View My Pass
                             </Button>
                           </div>

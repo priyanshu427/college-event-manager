@@ -1,5 +1,4 @@
-import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import {
   ArrowRightIcon,
   BadgeCheckIcon,
@@ -49,7 +48,7 @@ export function Hero() {
             <Button
               size="lg"
               className="h-11 px-5 text-sm"
-              render={<Link href="/events" />}
+              render={<Link to="/events" />}
             >
               Explore events
               <ArrowRightIcon data-icon="inline-end" />
@@ -58,7 +57,7 @@ export function Hero() {
               size="lg"
               variant="outline"
               className="h-11 bg-background/60 px-5 text-sm backdrop-blur"
-              render={<Link href="/dashboard" />}
+              render={<Link to="/dashboard" />}
             >
               <QrCodeIcon data-icon="inline-start" />
               Open organizer dashboard
@@ -80,13 +79,10 @@ export function Hero() {
 
         <div className="relative w-full max-w-xl lg:max-w-none lg:flex-1">
           <div className="relative aspect-4/3 w-full overflow-hidden rounded-3xl ring-1 ring-foreground/10 shadow-2xl">
-            <Image
+            <img
               src="/events/tech-fest.png"
               alt="Students walking between exhibition stalls at the campus tech fest"
-              fill
-              priority
-              sizes="(min-width: 1024px) 560px, 100vw"
-              className="object-cover"
+              className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
           </div>

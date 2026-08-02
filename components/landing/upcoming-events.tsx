@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
@@ -21,7 +19,7 @@ export function UpcomingEvents() {
             Registrations open right now
           </h2>
         </div>
-        <Button variant="outline" render={<Link href="/events" />}>
+        <Button variant="outline" render={<Link to="/events" />}>
           See all events
           <ArrowRightIcon data-icon="inline-end" />
         </Button>

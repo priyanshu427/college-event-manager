@@ -5,11 +5,6 @@ import { SiteFooter } from '@/components/site-footer'
 import { AnimatedGradientBg } from '@/components/ui/animated-gradient-bg'
 import { RoleLoginForm } from '@/components/auth/role-login-form'
 
-export const metadata = {
-  title: 'Sign In | Campus Pulse',
-  description: 'Login to your student, organizer, or administrator portal at Campus Pulse.',
-}
-
 export default function HomePage() {
   return (
     <AnimatedGradientBg accentColor="neutral">

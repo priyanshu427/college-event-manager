@@ -1,8 +1,5 @@
-'use client'
-
 import React, { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   GraduationCap,
   Building2,
@@ -39,7 +36,7 @@ export function RoleLoginForm({
   showRoleTabs = true,
   redirectUrl,
 }: RoleLoginFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const { role: currentRole, loginAsRole } = useStore()
   const [activeRole, setActiveRole] = useState<Role>(initialRole)
 
@@ -80,7 +77,7 @@ export function RoleLoginForm({
             : targetRole === 'organizer'
             ? '/dashboard'
             : '/dashboard')
-        router.push(dest)
+        navigate(dest)
       }, 900)
     }, 600)
   }
@@ -129,7 +126,7 @@ export function RoleLoginForm({
             : activeRole === 'organizer'
             ? '/dashboard'
             : '/dashboard')
-        router.push(dest)
+        navigate(dest)
       }, 1000)
     }, 700)
   }
@@ -138,29 +135,29 @@ export function RoleLoginForm({
   const roleConfig = {
     student: {
       title: 'Student Portal',
-      subtitle: 'Access campus events, register for passes & view tickets',
+      subtitle: 'Browse events & access QR passes',
       icon: GraduationCap,
       accentGradient: 'from-emerald-500 via-teal-500 to-cyan-500',
       badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
       buttonBg: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 dark:shadow-none',
-      idLabel: 'Roll Number or Student Email',
-      idPlaceholder: 'e.g. SIT21CS042 or student@sit.edu.in',
+      idLabel: 'Student Email or Roll Number',
+      idPlaceholder: 'e.g. SIT21CS042 or aarav.menon@sit.edu.in',
       demoUser: demoUsers.student,
     },
     organizer: {
       title: 'Organizer Portal',
-      subtitle: 'Manage events, scan QR passes, & track attendance',
+      subtitle: 'Manage events, check-ins & roster',
       icon: Building2,
-      accentGradient: 'from-indigo-500 via-purple-500 to-pink-500',
+      accentGradient: 'from-purple-500 via-indigo-500 to-violet-500',
       badgeBg: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800',
       buttonBg: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-200 dark:shadow-none',
-      idLabel: 'Organizer ID or Faculty Email',
-      idPlaceholder: 'e.g. ORG-FAC-809 or meera.organizer@sit.edu.in',
+      idLabel: 'Organizer Faculty ID or Email',
+      idPlaceholder: 'e.g. meera.organizer@sit.edu.in',
       demoUser: demoUsers.organizer,
     },
     admin: {
-      title: 'Admin Portal',
-      subtitle: 'System governance, role approvals, & campus analytics',
+      title: 'System Admin',
+      subtitle: 'Governance, policies & data reset',
       icon: ShieldCheck,
       accentGradient: 'from-amber-500 via-rose-500 to-orange-500',
       badgeBg: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
@@ -171,7 +168,7 @@ export function RoleLoginForm({
     },
   }
 
-  const currentConfig = roleConfig[activeRole]
+  const currentConfig = roleConfig[activeRole as keyof typeof roleConfig]
   const ActiveIcon = currentConfig.icon
 
   return (
@@ -411,7 +408,7 @@ export function RoleLoginForm({
         <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
           Need a different login?{' '}
           <Link
-            href={
+            to={
               activeRole === 'student'
                 ? '/login/organizer'
                 : activeRole === 'organizer'

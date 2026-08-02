@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { ArrowRightIcon, ScanLineIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -20,7 +20,7 @@ export function CtaBand() {
             <Button
               size="lg"
               className="h-11 px-5 text-sm"
-              render={<Link href="/events" />}
+              render={<Link to="/events" />}
             >
               Register for an event
               <ArrowRightIcon data-icon="inline-end" />
@@ -29,7 +29,7 @@ export function CtaBand() {
               size="lg"
               variant="outline"
               className="h-11 bg-background/60 px-5 text-sm backdrop-blur"
-              render={<Link href="/dashboard" />}
+              render={<Link to="/dashboard" />}
             >
               <ScanLineIcon data-icon="inline-start" />
               Try the check-in desk

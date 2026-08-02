@@ -2,13 +2,8 @@ import React from 'react'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { EventsBrowser } from '@/components/events-browser'
-import { Sparkles, CalendarDays } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-
-export const metadata = {
-  title: 'Browse Events | Campus Pulse',
-  description: 'Search, filter, and register for technical hackathons, cultural nights, workshops, and sports meets.',
-}
 
 export default function EventsPage() {
   return (
