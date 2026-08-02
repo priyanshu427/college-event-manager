@@ -5,6 +5,7 @@ export type EventCategory =
   | 'Workshop'
   | 'Seminar'
   | 'Fest'
+  | 'Gaming'
 
 export type EventStatus = 'upcoming' | 'live' | 'completed'
 

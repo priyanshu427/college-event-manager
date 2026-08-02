@@ -45,8 +45,11 @@ export function EventCard({
     <Card className="group flex flex-col gap-0 overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-md rounded-2xl border">
       <div className="relative aspect-[16/7.5] overflow-hidden">
         <img
-          src={event.image || '/placeholder.svg'}
+          src={event.image || '/events/tech-fest.png'}
           alt={`${event.title} at the campus`}
+          onError={(e) => {
+            ;(e.target as HTMLImageElement).src = '/events/tech-fest.png'
+          }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />

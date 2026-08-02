@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
   BellIcon,
@@ -10,7 +10,6 @@ import {
   XIcon,
   ZapIcon,
   LogOutIcon,
-  LogInIcon,
   UserIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,13 +28,14 @@ import {
 
 export function SiteHeader() {
   const location = useLocation()
+  const navigate = useNavigate()
   const pathname = location.pathname
   const { role, user, announcements, markAllAnnouncementsRead, getEvent, isLoggedIn, logout } =
     useStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const unread = announcements.filter((a) => !a.read).length
 
-  // Build role-based links dynamically per user requirements:
+  // Build role-based links dynamically:
   // - Home & Events: always visible
   // - My Passes: visible ONLY when logged in as participant (student)
   // - Organizer: visible ONLY when logged in as event organizer / admin
@@ -86,51 +86,53 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* Notifications */}
-          <Popover onOpenChange={(open) => open && markAllAnnouncementsRead()}>
-            <PopoverTrigger
-              render={
-                <Button variant="ghost" size="icon" className="relative" />
-              }
-              aria-label="Notifications"
-            >
-              <BellIcon />
-              {unread > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                  {unread}
-                </span>
-              )}
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
-              <div className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm font-medium">Notifications</p>
-                <Badge variant="secondary">{announcements.length}</Badge>
-              </div>
-              <Separator />
-              <ul className="max-h-80 divide-y divide-border overflow-y-auto">
-                {announcements.map((a) => (
-                  <li key={a.id} className="flex flex-col gap-1 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">{a.title}</p>
-                      {a.priority === 'urgent' && (
-                        <Badge variant="destructive">Urgent</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {a.message}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {a.eventId === 'all'
-                        ? 'All events'
-                        : (getEvent(a.eventId)?.title ?? 'Event')}
-                      {' · '}
-                      {formatDateTime(a.createdAt)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </PopoverContent>
-          </Popover>
+          {/* Notifications (Only visible when logged in & not on login page) */}
+          {isLoggedIn && !pathname.startsWith('/login') && (
+            <Popover onOpenChange={(open) => open && markAllAnnouncementsRead()}>
+              <PopoverTrigger
+                render={
+                  <Button variant="ghost" size="icon" className="relative" />
+                }
+                aria-label="Notifications"
+              >
+                <BellIcon />
+                {unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                    {unread}
+                  </span>
+                )}
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <p className="text-sm font-medium">Notifications</p>
+                  <Badge variant="secondary">{announcements.length}</Badge>
+                </div>
+                <Separator />
+                <ul className="max-h-80 divide-y divide-border overflow-y-auto">
+                  {announcements.map((a) => (
+                    <li key={a.id} className="flex flex-col gap-1 px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{a.title}</p>
+                        {a.priority === 'urgent' && (
+                          <Badge variant="destructive">Urgent</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {a.message}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {a.eventId === 'all'
+                          ? 'All events'
+                          : (getEvent(a.eventId)?.title ?? 'Event')}
+                        {' · '}
+                        {formatDateTime(a.createdAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </PopoverContent>
+            </Popover>
+          )}
 
           {/* User Profile Popover Menu */}
           {isLoggedIn ? (
@@ -176,7 +178,10 @@ export function SiteHeader() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => logout()}
+                      onClick={() => {
+                        logout()
+                        navigate('/login')
+                      }}
                       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                     >
                       <LogOutIcon className="size-3.5" />
@@ -186,14 +191,7 @@ export function SiteHeader() {
                 </PopoverContent>
               </Popover>
             </div>
-          ) : (
-            <Link to="/login" className="hidden sm:inline-flex">
-              <Button size="sm" variant="default" className="h-8 text-xs px-3">
-                <LogInIcon className="size-3.5 mr-1" />
-                Sign In
-              </Button>
-            </Link>
-          )}
+          ) : null}
 
           <Button
             variant="ghost"

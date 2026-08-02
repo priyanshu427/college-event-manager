@@ -117,12 +117,12 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": False,
         "teamSize": 1,
         "prize": "Trophies + Certificates",
-        "image": "/events/cultural.png",
+        "image": "/events/cultural-night.png",
         "tags": ["Dance", "Music", "Fashion", "Celebrity Act"],
     },
     {
         "id": "ev-robotics",
-        "title": "RoboSprint Line Follower",
+        "title": "RoboSprint Line Follower Challenge",
         "tagline": "Fastest bot on the track takes it all.",
         "description": "Custom autonomous bots compete on an obstacle-laden black line track. Precision tuning, sensor calibration and speed decide who advances through knockout rounds to the finals.",
         "category": "Technical",
@@ -159,7 +159,7 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": False,
         "teamSize": 1,
         "prize": "Figma Subscriptions + Goodies",
-        "image": "/events/workshop.png",
+        "image": "/events/designathon.png",
         "tags": ["Figma", "UI/UX", "Sprint", "Solo"],
     },
     {
@@ -180,7 +180,7 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": True,
         "teamSize": 6,
         "prize": "Rs. 40,000 + Studio Recording Time",
-        "image": "/events/concert.png",
+        "image": "/events/battle-of-bands.png",
         "tags": ["Music", "Live Band", "Stage", "Competition"],
     },
     {
@@ -201,7 +201,7 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": True,
         "teamSize": 5,
         "prize": "Rs. 25,000",
-        "image": "/events/gaming.png",
+        "image": "/events/esports.png",
         "tags": ["Esports", "Valorant", "LAN", "Shoutcast"],
     },
     {
@@ -222,7 +222,7 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": True,
         "teamSize": 10,
         "prize": "Championship Trophy",
-        "image": "/events/sports.png",
+        "image": "/events/football-cup.png",
         "tags": ["Football", "Turf", "Knockout", "Sports"],
     },
     {
@@ -243,7 +243,7 @@ INITIAL_SEED_EVENTS = [
         "teamEvent": False,
         "teamSize": 1,
         "prize": "Certificate of Completion",
-        "image": "/events/tech-fest.png",
+        "image": "/events/ai-workshop.png",
         "tags": ["AI", "LLMs", "Python", "Hands-on"],
     },
 ]
@@ -267,7 +267,7 @@ def db_event_to_dict(event: models.Event) -> dict:
         "teamEvent": event.teamEvent,
         "teamSize": event.teamSize,
         "prize": event.prize,
-        "image": event.image or "/placeholder.svg",
+        "image": event.image or "/events/hackathon.png",
         "tags": json.loads(event.tags) if event.tags and event.tags.startswith("[") else (event.tags.split(",") if event.tags else []),
     }
 

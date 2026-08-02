@@ -6,7 +6,6 @@ import type {
   Role,
 } from '@/lib/types'
 
-
 export const COLLEGE_NAME = 'Sunrise Institute of Technology'
 
 export const currentUser: CurrentUser = {
@@ -52,7 +51,6 @@ export const demoUsers: Record<Role, CurrentUser> = {
     role: 'admin',
   },
 }
-
 
 export const seedEvents: EventItem[] = [
   {
@@ -122,297 +120,182 @@ export const seedEvents: EventItem[] = [
     tags: ['Robotics', 'Arena', 'Live Scoring'],
   },
   {
-    id: 'ev-workshop',
-    title: 'Applied AI Bootcamp',
-    tagline: 'From notebook to deployed model in one day.',
+    id: 'ev-uiux',
+    title: 'Pixel Craft UI/UX Designathon',
+    tagline: 'Design accessible campus solutions in 4 hours.',
     description:
-      'A hands-on bootcamp covering data prep, fine-tuning and shipping an inference endpoint. Seats are limited because every participant gets a mentor-reviewed project at the end.',
+      'A focused sprint to redesign one real-world student portal touchpoint. Participants deliver Figma prototypes evaluated on usability, accessibility contrast and design system consistency.',
     category: 'Workshop',
     status: 'upcoming',
     date: '2026-08-14',
-    startTime: '09:30',
-    endTime: '17:00',
-    venue: 'Seminar Hall B, Block C',
-    department: 'Artificial Intelligence',
-    organizer: 'IEEE Student Chapter',
-    capacity: 90,
-    fee: 250,
+    startTime: '11:00',
+    endTime: '15:00',
+    venue: 'Design Studio 2',
+    department: 'Information Technology',
+    organizer: 'Design Guild',
+    capacity: 80,
+    fee: 50,
     teamEvent: false,
-    prize: 'Certified by IEEE SB',
-    image: '/events/ai-workshop.png',
-    tags: ['AI', 'Hands-on', 'Certificate'],
+    teamSize: 1,
+    prize: 'Figma Subscriptions + Goodies',
+    image: '/events/designathon.png',
+    tags: ['Figma', 'UI/UX', 'Sprint', 'Solo'],
   },
   {
-    id: 'ev-summit',
-    title: 'Founders Summit 2026',
-    tagline: 'Nine founders. One stage. Zero fluff.',
-    description:
-      'A half-day summit with founder keynotes, a live pitch clinic and an investor AMA. Selected teams get a ten minute slot to pitch to the panel with feedback recorded on the spot.',
-    category: 'Seminar',
-    status: 'upcoming',
-    date: '2026-09-05',
-    startTime: '10:00',
-    endTime: '15:30',
-    venue: 'Central Auditorium',
-    department: 'Management Studies',
-    organizer: 'E-Cell',
-    capacity: 500,
-    fee: 100,
-    teamEvent: false,
-    prize: 'Incubation shortlist',
-    image: '/events/startup-summit.png',
-    tags: ['Startups', 'Keynote', 'Pitch'],
-  },
-  {
-    id: 'ev-sports',
-    title: 'Annual Athletics Meet',
-    tagline: 'Track, field and house pride.',
-    description:
-      'Two days of track and field across sprints, relays, long jump and shot put. Heat sheets and bib numbers are issued automatically from the registration list.',
-    category: 'Sports',
-    status: 'upcoming',
-    date: '2026-09-12',
-    startTime: '07:00',
-    endTime: '18:00',
-    venue: 'University Athletics Track',
-    department: 'Physical Education',
-    organizer: 'Sports Council',
-    capacity: 600,
-    fee: 0,
-    teamEvent: false,
-    prize: 'Medals and house points',
-    image: '/events/sports-meet.png',
-    tags: ['Athletics', 'Two Days', 'Medals'],
-  },
-  {
-    id: 'ev-bands',
+    id: 'ev-battlebands',
     title: 'Battle of the Bands',
     tagline: 'Eight bands, one encore.',
     description:
-      'Campus bands go head to head across two rounds judged on originality, tightness and crowd response. Sound check slots are auto-assigned an hour before the show.',
+      'Inter-college band championship featuring rock, metal and fusion genres. Each band gets a 20-minute stage slot evaluated on originality, stage presence and crowd engagement.',
     category: 'Cultural',
-    status: 'completed',
-    date: '2026-07-18',
+    status: 'upcoming',
+    date: '2026-08-18',
     startTime: '18:00',
     endTime: '22:30',
     venue: 'Quadrangle Stage',
-    department: 'Student Affairs',
-    organizer: 'Music Club',
+    department: 'Music Society',
+    organizer: 'Octave Club',
     capacity: 800,
     fee: 50,
     teamEvent: true,
     teamSize: 6,
-    prize: 'Rs. 20,000 and studio time',
+    prize: 'Rs. 40,000 + Studio Recording Time',
     image: '/events/battle-of-bands.png',
-    tags: ['Live Music', 'Bands', 'Finals'],
+    tags: ['Music', 'Live Band', 'Stage', 'Competition'],
   },
   {
-    id: 'ev-techfest',
-    title: 'Aurora Tech Fest Expo',
-    tagline: 'Fifty stalls of student engineering.',
+    id: 'ev-esports',
+    title: 'Valorant Campus Championship',
+    tagline: '5v5 tactical shooter tournament.',
     description:
-      'The open expo day of the fest where every department showcases working projects, with a public voting track for the people-choice award. Walk-in check-in is handled at the gate desk.',
-    category: 'Fest',
+      'LAN tournament played on dedicated tournament servers with live shoutcasting in the auditorium. Double elimination bracket with custom lobby settings.',
+    category: 'Gaming',
+    status: 'upcoming',
+    date: '2026-08-25',
+    startTime: '13:00',
+    endTime: '20:00',
+    venue: 'Seminar Hall A',
+    department: 'Esports Alliance',
+    organizer: 'GG Campus',
+    capacity: 160,
+    fee: 250,
+    teamEvent: true,
+    teamSize: 5,
+    prize: 'Rs. 25,000',
+    image: '/events/esports.png',
+    tags: ['Esports', 'Valorant', 'LAN', 'Shoutcast'],
+  },
+  {
+    id: 'ev-sports',
+    title: 'Inter-Department Football Cup',
+    tagline: 'Pride, passion and 90 minutes on the turf.',
+    description:
+      'Annual 7-a-side football tournament for department teams. Knockout matches played under floodlights with official FIFA-certified student referees.',
+    category: 'Sports',
     status: 'completed',
-    date: '2026-07-04',
-    startTime: '09:00',
-    endTime: '19:00',
-    venue: 'Main Campus Grounds',
-    department: 'All Departments',
-    organizer: 'Fest Core Team',
-    capacity: 2000,
+    date: '2026-07-20',
+    startTime: '16:00',
+    endTime: '20:00',
+    venue: 'Sports Complex Turf',
+    department: 'Physical Education',
+    organizer: 'Sports Council',
+    capacity: 300,
     fee: 0,
+    teamEvent: true,
+    teamSize: 10,
+    prize: 'Championship Trophy',
+    image: '/events/football-cup.png',
+    tags: ['Football', 'Turf', 'Knockout', 'Sports'],
+  },
+  {
+    id: 'ev-ai-workshop',
+    title: 'Generative AI & LLM Deployment Workshop',
+    tagline: 'From prompt engineering to production APIs.',
+    description:
+      'Hands-on masterclass building RAG pipelines using LangChain, FastHTML and local LLM backends. Laptop with Python 3.10+ required for hands-on labs.',
+    category: 'Workshop',
+    status: 'completed',
+    date: '2026-07-25',
+    startTime: '10:00',
+    endTime: '16:00',
+    venue: 'Central Computing Center',
+    department: 'Computer Science',
+    organizer: 'AI Research Group',
+    capacity: 100,
+    fee: 100,
     teamEvent: false,
-    prize: 'People-choice trophy',
-    image: '/events/tech-fest.png',
-    tags: ['Expo', 'Open Day', 'Voting'],
+    teamSize: 1,
+    prize: 'Certificate of Completion',
+    image: '/events/ai-workshop.png',
+    tags: ['AI', 'LLMs', 'Python', 'Hands-on'],
   },
 ]
 
-const firstNames = [
-  'Ishita',
-  'Rohan',
-  'Meera',
-  'Kabir',
-  'Ananya',
-  'Vikram',
-  'Sneha',
-  'Arjun',
-  'Priya',
-  'Dev',
-  'Naina',
-  'Yash',
-  'Tara',
-  'Nikhil',
-  'Riya',
-  'Aditya',
-  'Kavya',
-  'Manav',
-  'Sara',
-  'Farhan',
-  'Diya',
-  'Karthik',
-  'Neha',
-  'Imran',
-]
-const lastNames = [
-  'Sharma',
-  'Iyer',
-  'Nair',
-  'Verma',
-  'Reddy',
-  'Bose',
-  'Kulkarni',
-  'Patel',
-  'Rao',
-  'Khan',
-  'Joshi',
-  'Menon',
-]
-const departments = [
-  'Computer Science',
-  'Electronics',
-  'Mechanical',
-  'Civil',
-  'Artificial Intelligence',
-  'Management Studies',
-]
-const years = ['1st Year', '2nd Year', '3rd Year', '4th Year']
-const teamNames = [
-  'Null Pointers',
-  'Byte Me',
-  'Circuit Breakers',
-  'Stack Overflow',
-  'Kernel Panic',
-  'Team Nova',
-  'Hz Collective',
-  'The Debuggers',
-]
-
-/** Deterministic pseudo-random so server and client render identically. */
-function rand(seed: number) {
-  const x = Math.sin(seed * 12.9898) * 43758.5453
-  return x - Math.floor(x)
-}
-
-export function makeCode(seed: number) {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let out = ''
-  for (let i = 0; i < 6; i++) {
-    out += alphabet[Math.floor(rand(seed + i * 7.7) * alphabet.length)]
-  }
-  return `SIT-${out}`
-}
-
-const registrationCounts: Record<string, number> = {
-  'ev-hackathon': 34,
-  'ev-cultural': 52,
-  'ev-robotics': 26,
-  'ev-workshop': 41,
-  'ev-summit': 38,
-  'ev-sports': 45,
-  'ev-bands': 29,
-  'ev-techfest': 61,
-}
-
-function buildSeedRegistrations(): Registration[] {
-  const out: Registration[] = []
-  let n = 0
-  for (const event of seedEvents) {
-    const total = registrationCounts[event.id] ?? 20
-    for (let i = 0; i < total; i++) {
-      n += 1
-      const r = (offset: number) => rand(n * 3.31 + offset)
-      const first = firstNames[Math.floor(r(1) * firstNames.length)]
-      const last = lastNames[Math.floor(r(2) * lastNames.length)]
-      const dept = departments[Math.floor(r(3) * departments.length)]
-      const year = years[Math.floor(r(4) * years.length)]
-      const checkedIn =
-        event.status === 'completed'
-          ? r(5) > 0.18
-          : event.status === 'live'
-            ? r(5) > 0.45
-            : false
-      out.push({
-        id: `reg-${n}`,
-        code: makeCode(n * 5 + 11),
-        eventId: event.id,
-        name: `${first} ${last}`,
-        email: `${first.toLowerCase()}.${last.toLowerCase()}@sit.edu.in`,
-        phone: `9${Math.floor(r(6) * 900000000 + 100000000)}`,
-        college: COLLEGE_NAME,
-        department: dept,
-        year,
-        rollNumber: `SIT2${Math.floor(r(7) * 4)}${dept.slice(0, 2).toUpperCase()}${String(
-          Math.floor(r(8) * 900 + 100),
-        )}`,
-        teamName: event.teamEvent
-          ? teamNames[Math.floor(r(9) * teamNames.length)]
-          : undefined,
-        registeredAt: `2026-0${event.status === 'completed' ? 6 : 7}-${String(
-          Math.floor(r(10) * 27 + 1),
-        ).padStart(2, '0')}T10:${String(Math.floor(r(11) * 59)).padStart(2, '0')}:00`,
-        checkedIn,
-        checkedInAt: checkedIn ? `${event.date}T09:45:00` : undefined,
-        paid: event.fee === 0 ? true : r(12) > 0.12,
-      })
-    }
-  }
-  return out
-}
-
-export const seedRegistrations: Registration[] = buildSeedRegistrations()
-
-/** Registrations that belong to the signed-in demo student. */
 export const myseedRegistrations: Registration[] = [
   {
-    id: 'reg-me-1',
-    code: 'SIT-7KQ4MZ',
+    id: 'reg-001',
+    code: 'SIT-CODESTORM-042',
     eventId: 'ev-hackathon',
-    name: currentUser.name,
-    email: currentUser.email,
-    phone: currentUser.phone,
-    college: currentUser.college,
-    department: currentUser.department,
-    year: currentUser.year,
-    rollNumber: currentUser.rollNumber,
-    teamName: 'Null Pointers',
-    members: 'Aarav Menon, Ishita Sharma, Dev Patel, Riya Nair',
-    registeredAt: '2026-07-22T18:24:00',
+    name: 'Aarav Menon',
+    email: 'aarav.menon@sit.edu.in',
+    phone: '98765 43210',
+    college: COLLEGE_NAME,
+    department: 'Computer Science',
+    year: '3rd Year',
+    rollNumber: 'SIT21CS042',
+    registeredAt: '2026-07-15T10:30:00Z',
+    checkedIn: false,
+    paid: true,
+    teamName: 'Neural Ninjas',
+  },
+  {
+    id: 'reg-002',
+    code: 'SIT-BANDS-042',
+    eventId: 'ev-battlebands',
+    name: 'Aarav Menon',
+    email: 'aarav.menon@sit.edu.in',
+    phone: '98765 43210',
+    college: COLLEGE_NAME,
+    department: 'Computer Science',
+    year: '3rd Year',
+    rollNumber: 'SIT21CS042',
+    registeredAt: '2026-07-18T14:15:00Z',
     checkedIn: false,
     paid: true,
   },
+]
+
+export const seedRegistrations: Registration[] = [
   {
-    id: 'reg-me-2',
-    code: 'SIT-P3XB9T',
-    eventId: 'ev-bands',
-    name: currentUser.name,
-    email: currentUser.email,
-    phone: currentUser.phone,
-    college: currentUser.college,
-    department: currentUser.department,
-    year: currentUser.year,
-    rollNumber: currentUser.rollNumber,
-    teamName: 'Hz Collective',
-    registeredAt: '2026-06-30T12:05:00',
+    id: 'reg-003',
+    code: 'SIT-ROBO-015',
+    eventId: 'ev-robotics',
+    name: 'Ananya Roy',
+    email: 'ananya.roy@sit.edu.in',
+    phone: '98765 11111',
+    college: COLLEGE_NAME,
+    department: 'Electronics',
+    year: '2nd Year',
+    rollNumber: 'SIT22EC015',
+    registeredAt: '2026-07-20T09:00:00Z',
     checkedIn: true,
-    checkedInAt: '2026-07-18T17:52:00',
+    checkedInAt: '2026-08-01T10:15:00Z',
     paid: true,
   },
   {
-    id: 'reg-me-3',
-    code: 'SIT-J8VN5C',
-    eventId: 'ev-techfest',
-    name: currentUser.name,
-    email: currentUser.email,
-    phone: currentUser.phone,
-    college: currentUser.college,
-    department: currentUser.department,
-    year: currentUser.year,
-    rollNumber: currentUser.rollNumber,
-    registeredAt: '2026-06-18T09:41:00',
+    id: 'reg-004',
+    code: 'SIT-ROBO-088',
+    eventId: 'ev-robotics',
+    name: 'Rohan Verma',
+    email: 'rohan.v@sit.edu.in',
+    phone: '98765 22222',
+    college: COLLEGE_NAME,
+    department: 'Mechanical',
+    year: '3rd Year',
+    rollNumber: 'SIT21ME088',
+    registeredAt: '2026-07-21T11:40:00Z',
     checkedIn: true,
-    checkedInAt: '2026-07-04T09:18:00',
+    checkedInAt: '2026-08-01T10:22:00Z',
     paid: true,
   },
 ]
@@ -420,32 +303,32 @@ export const myseedRegistrations: Registration[] = [
 export const seedAnnouncements: Announcement[] = [
   {
     id: 'ann-1',
-    eventId: 'ev-hackathon',
-    title: 'Problem statements are live',
+    title: 'CodeStorm Problem Statements Released',
     message:
-      'All eight problem statements for CodeStorm are now published. Pick your track before the 19th so we can assign mentors.',
-    priority: 'normal',
-    createdAt: '2026-07-30T11:00:00',
+      'All team leads can now view the domain tracks under My Passes. Mentorship slots open tomorrow at 10 AM.',
+    eventId: 'ev-hackathon',
+    createdAt: '2026-07-28T08:00:00Z',
     read: false,
+    priority: 'urgent',
   },
   {
     id: 'ann-2',
-    eventId: 'ev-robotics',
-    title: 'Pit scrutiny starts at 9:30 AM',
+    title: 'Line Follower Calibration Track Open',
     message:
-      'Bring your bot to the pit desk 30 minutes before your heat. Battery limits will be enforced strictly this year.',
-    priority: 'urgent',
-    createdAt: '2026-08-01T07:15:00',
+      'The practice track in the mechanical workshop is open for sensor calibration till 6 PM today.',
+    eventId: 'ev-robotics',
+    createdAt: '2026-07-31T09:30:00Z',
     read: false,
+    priority: 'normal',
   },
   {
     id: 'ann-3',
-    eventId: 'all',
-    title: 'Digital passes replace paper slips',
+    title: 'Campus Entry Guidelines for Fest Week',
     message:
-      'Every registration now issues a QR pass. Volunteers will scan it at the gate, so no printed forms are needed.',
-    priority: 'normal',
-    createdAt: '2026-07-26T16:40:00',
+      'Please keep your SIT digital pass QR code handy at gate 2 for fast-track entry.',
+    eventId: 'all',
+    createdAt: '2026-07-30T12:00:00Z',
     read: true,
+    priority: 'normal',
   },
 ]

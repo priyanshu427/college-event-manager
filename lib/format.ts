@@ -71,6 +71,7 @@ export const categoryStyles: Record<EventCategory, string> = {
   Workshop: 'bg-chart-3/15 text-chart-3 border-chart-3/25',
   Seminar: 'bg-chart-5/15 text-chart-5 border-chart-5/30',
   Fest: 'bg-primary/15 text-primary border-primary/25',
+  Gaming: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
 }
 
 export const statusLabels: Record<EventStatus, string> = {
