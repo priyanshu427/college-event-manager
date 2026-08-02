@@ -11,6 +11,13 @@ import {
 } from 'react'
 
 import {
+  createEventApi,
+  deleteEventApi,
+  fetchEvents,
+  resetEventsApi,
+  updateEventApi,
+} from '@/lib/api'
+import {
   currentUser as defaultCurrentUser,
   demoUsers,
   myseedRegistrations,
@@ -99,7 +106,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     useState<Announcement[]>(seedAnnouncements)
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load state from localStorage on mount
+  // Load state from localStorage on mount & fetch from FastAPI backend
   useEffect(() => {
     try {
       const storedEvents = localStorage.getItem(STORAGE_KEY_EVENTS)
@@ -121,6 +128,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoaded(true)
     }
+
+    fetchEvents()
+      .then((data) => {
+        if (data && Array.isArray(data)) {
+          setEvents(data)
+        }
+      })
+      .catch((err) =>
+        console.warn('Could not fetch events from FastAPI backend, using cached state:', err),
+      )
   }, [])
 
   // Persist events
@@ -181,7 +198,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const resetDatabase = useCallback(() => {
-    setEvents(seedEvents)
+    resetEventsApi()
+      .then((resettedEvents) => {
+        if (resettedEvents && Array.isArray(resettedEvents)) {
+          setEvents(resettedEvents)
+        }
+      })
+      .catch(() => setEvents(seedEvents))
+
     setRegistrations([...myseedRegistrations, ...seedRegistrations])
     setAnnouncements(seedAnnouncements)
     setUserState(defaultCurrentUser)
@@ -220,18 +244,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   const createEvent = useCallback((event: Omit<EventItem, 'id'>) => {
-    const created: EventItem = { ...event, id: newId('ev') }
+    const tempId = newId('ev')
+    const created: EventItem = { ...event, id: tempId }
     setEvents((prev) => [created, ...prev])
+
+    createEventApi(event)
+      .then((serverCreated) => {
+        setEvents((prev) =>
+          prev.map((e) => (e.id === tempId ? serverCreated : e)),
+        )
+      })
+      .catch((err) =>
+        console.error('Error persisting event to FastAPI backend:', err),
+      )
+
     return created
   }, [])
 
   const updateEvent = useCallback((id: string, patch: Partial<EventItem>) => {
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)))
+    updateEventApi(id, patch).catch((err) =>
+      console.error('Error updating event on FastAPI backend:', err),
+    )
   }, [])
 
   const deleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id))
     setRegistrations((prev) => prev.filter((r) => r.eventId !== id))
+    deleteEventApi(id).catch((err) =>
+      console.error('Error deleting event on FastAPI backend:', err),
+    )
   }, [])
 
   const register = useCallback((input: NewRegistrationInput) => {
