@@ -11,6 +11,7 @@ import {
   ZapIcon,
   LogOutIcon,
   LogInIcon,
+  UserIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
@@ -131,29 +132,59 @@ export function SiteHeader() {
             </PopoverContent>
           </Popover>
 
-          {/* Profile Badge / Sign In Action */}
+          {/* User Profile Popover Menu */}
           {isLoggedIn ? (
-            <div className="hidden sm:flex items-center gap-2">
-              <Link to="/login" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                <Avatar className="size-8">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                    {user.name
-                      .split(' ')
-                      .map((p) => p[0])
-                      .join('')}
-                  </AvatarFallback>
-                </Avatar>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => logout()}
-                className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
-                title="Sign out"
-              >
-                <LogOutIcon className="size-3.5 mr-1" />
-                Sign out
-              </Button>
+            <div className="hidden sm:flex items-center">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 rounded-full p-0 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:opacity-80"
+                    />
+                  }
+                  aria-label="User menu"
+                >
+                  <Avatar className="size-8 border border-border/80">
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {user.name
+                        .split(' ')
+                        .map((p) => p[0])
+                        .join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2" align="end">
+                  <div className="flex flex-col gap-1 px-2 py-1.5">
+                    <p className="text-xs font-semibold text-foreground truncate">{user.name}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="capitalize text-[10px] py-0 px-2 font-medium">
+                        {role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Separator className="my-1.5" />
+                  <div className="flex flex-col gap-0.5">
+                    <Link
+                      to="/login"
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                      <UserIcon className="size-3.5" />
+                      Switch Account / Role
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => logout()}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                    >
+                      <LogOutIcon className="size-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           ) : (
             <Link to="/login" className="hidden sm:inline-flex">
