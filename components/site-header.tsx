@@ -143,9 +143,6 @@ export function SiteHeader() {
                       .join('')}
                   </AvatarFallback>
                 </Avatar>
-                <Badge variant="outline" className="capitalize text-[10px] py-0 px-1.5 hidden xl:inline-flex">
-                  {role}
-                </Badge>
               </Link>
               <Button
                 variant="ghost"

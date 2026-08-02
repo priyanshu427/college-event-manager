@@ -38,16 +38,14 @@ export function RoleLoginForm({
   redirectUrl,
 }: RoleLoginFormProps) {
   const navigate = useNavigate()
-  const { role: currentRole, loginAsRole } = useStore()
+  const { role: currentRole, loginAsRole, user } = useStore()
   const [activeRole, setActiveRole] = useState<Role>(initialRole)
   const [isSignUp, setIsSignUp] = useState(false)
 
-  // Form states
+  // Form states - initialize completely empty with no pre-filled text
   const [fullName, setFullName] = useState('')
-  const [identifier, setIdentifier] = useState(
-    demoUsers[initialRole]?.email || ''
-  )
-  const [password, setPassword] = useState('demo1234')
+  const [identifier, setIdentifier] = useState('')
+  const [password, setPassword] = useState('')
   const [secondaryField, setSecondaryField] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -58,8 +56,8 @@ export function RoleLoginForm({
   const handleTabChange = (role: Role) => {
     setActiveRole(role)
     setErrorMessage('')
-    setIdentifier(demoUsers[role]?.email || '')
-    setPassword('demo1234')
+    setIdentifier('')
+    setPassword('')
     setSecondaryField('')
   }
 
@@ -208,7 +206,7 @@ export function RoleLoginForm({
       badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800',
       buttonBg: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 dark:shadow-none',
       idLabel: 'Student Email or Roll Number',
-      idPlaceholder: 'e.g. SIT21CS042 or aarav.menon@sit.edu.in',
+      idPlaceholder: 'Enter student email or roll number',
       demoUser: demoUsers.student,
     },
     organizer: {
@@ -219,7 +217,7 @@ export function RoleLoginForm({
       badgeBg: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800',
       buttonBg: 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-200 dark:shadow-none',
       idLabel: 'Organizer Faculty ID or Email',
-      idPlaceholder: 'e.g. meera.organizer@sit.edu.in',
+      idPlaceholder: 'Enter faculty ID or email',
       demoUser: demoUsers.organizer,
     },
     admin: {
@@ -230,7 +228,7 @@ export function RoleLoginForm({
       badgeBg: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
       buttonBg: 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200 dark:shadow-none',
       idLabel: 'Admin Email or Security Key',
-      idPlaceholder: 'e.g. admin.dean@sit.edu.in',
+      idPlaceholder: 'Enter admin email or security key',
       demoUser: demoUsers.admin,
     },
   }
@@ -305,14 +303,14 @@ export function RoleLoginForm({
           <div className="my-4 flex flex-col items-center justify-center rounded-2xl bg-emerald-50/90 p-4 text-center border border-emerald-200 dark:bg-emerald-950/80 dark:border-emerald-800 animate-in fade-in zoom-in-95">
             <CheckCircle2 className="size-10 text-emerald-600 dark:text-emerald-400 mb-1 animate-bounce" />
             <h3 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-              {isSignUp ? 'Account Created Successfully!' : `Welcome back, ${currentConfig.demoUser.name}!`}
+              {isSignUp ? `Account Created! Welcome, ${user?.name || fullName}!` : `Welcome back, ${user?.name || currentConfig.demoUser.name}!`}
             </h3>
             <p className="mt-0.5 text-xs text-emerald-700 dark:text-emerald-300">
               Authenticated as {activeRole.toUpperCase()} · Redirecting...
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-2.5">
+          <form onSubmit={handleSubmit} className="space-y-2.5" autoComplete="off">
             {/* Error Banner */}
             {errorMessage && (
               <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
@@ -333,9 +331,10 @@ export function RoleLoginForm({
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Aarav Menon"
-                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-300 placeholder:opacity-100 font-semibold focus:ring-2 focus:ring-primary/30"
+                    placeholder="Enter your full name"
+                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal focus:ring-2 focus:ring-primary/30"
                     required={isSignUp}
+                    autoComplete="off"
                   />
                   <User className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
                 </div>
@@ -354,8 +353,9 @@ export function RoleLoginForm({
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder={currentConfig.idPlaceholder}
-                  className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-300 placeholder:opacity-100 font-semibold focus:ring-2 focus:ring-primary/30"
+                  className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal focus:ring-2 focus:ring-primary/30"
                   required
+                  autoComplete="off"
                 />
                 <Mail className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
               </div>
@@ -386,9 +386,10 @@ export function RoleLoginForm({
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-8 pr-9 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-300 placeholder:opacity-100 font-semibold focus:ring-2 focus:ring-primary/30"
+                  placeholder="Enter your password"
+                  className="pl-8 pr-9 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal focus:ring-2 focus:ring-primary/30"
                   required
+                  autoComplete="new-password"
                 />
                 <Lock className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
                 <button
@@ -413,8 +414,9 @@ export function RoleLoginForm({
                     type="text"
                     value={secondaryField}
                     onChange={(e) => setSecondaryField(e.target.value)}
-                    placeholder="e.g. CODING-CLUB-2026"
-                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-300 placeholder:opacity-100 font-semibold"
+                    placeholder="Enter department or club code"
+                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal"
+                    autoComplete="off"
                   />
                   <KeyRound className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
                 </div>
@@ -432,15 +434,16 @@ export function RoleLoginForm({
                     type="password"
                     value={secondaryField}
                     onChange={(e) => setSecondaryField(e.target.value)}
-                    placeholder="e.g. ADM-KEY-9900"
-                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-700 dark:placeholder:text-slate-300 placeholder:opacity-100 font-semibold"
+                    placeholder="Enter security passcode"
+                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal"
+                    autoComplete="off"
                   />
                   <KeyRound className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
                 </div>
               </div>
             )}
 
-            {/* Submit Button: Changes text based on isSignUp mode */}
+            {/* Submit Button */}
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -500,7 +503,7 @@ export function RoleLoginForm({
           </Button>
         </div>
 
-        {/* Toggle Link: Sign Up <-> Sign In mode switch */}
+        {/* Toggle Link */}
         <div className="mt-3 text-center text-[11px] text-slate-500 dark:text-slate-400">
           {isSignUp ? (
             <span>
