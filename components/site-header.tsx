@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-
 import { useState } from 'react'
 import {
   BellIcon,
@@ -10,6 +9,8 @@ import {
   TicketIcon,
   XIcon,
   ZapIcon,
+  LogOutIcon,
+  LogInIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
@@ -25,20 +26,28 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 
-const links = [
-  { href: '/', label: 'Home', icon: ZapIcon },
-  { href: '/events', label: 'Events', icon: CalendarDaysIcon },
-  { href: '/my-passes', label: 'My Passes', icon: TicketIcon },
-  { href: '/dashboard', label: 'Organizer', icon: LayoutDashboardIcon },
-]
-
 export function SiteHeader() {
   const location = useLocation()
   const pathname = location.pathname
-  const { role, user, announcements, markAllAnnouncementsRead, getEvent } =
+  const { role, user, announcements, markAllAnnouncementsRead, getEvent, isLoggedIn, logout } =
     useStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const unread = announcements.filter((a) => !a.read).length
+
+  // Build role-based links dynamically per user requirements:
+  // - Home & Events: always visible
+  // - My Passes: visible ONLY when logged in as participant (student)
+  // - Organizer: visible ONLY when logged in as event organizer / admin
+  const links = [
+    { href: '/', label: 'Home', icon: ZapIcon },
+    { href: '/events', label: 'Events', icon: CalendarDaysIcon },
+    ...(isLoggedIn && role === 'student'
+      ? [{ href: '/my-passes', label: 'My Passes', icon: TicketIcon }]
+      : []),
+    ...(isLoggedIn && (role === 'organizer' || role === 'admin')
+      ? [{ href: '/dashboard', label: 'Organizer', icon: LayoutDashboardIcon }]
+      : []),
+  ]
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl print-hide">
@@ -76,8 +85,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-
-
           {/* Notifications */}
           <Popover onOpenChange={(open) => open && markAllAnnouncementsRead()}>
             <PopoverTrigger
@@ -124,20 +131,41 @@ export function SiteHeader() {
             </PopoverContent>
           </Popover>
 
-          {/* Profile Badge & Avatar */}
-          <Link to="/login" className="hidden sm:flex items-center gap-2">
-            <Avatar className="size-8">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                {user.name
-                  .split(' ')
-                  .map((p) => p[0])
-                  .join('')}
-              </AvatarFallback>
-            </Avatar>
-            <Badge variant="outline" className="capitalize text-[10px] py-0 px-1.5 hidden xl:inline-flex">
-              {role}
-            </Badge>
-          </Link>
+          {/* Profile Badge / Sign In Action */}
+          {isLoggedIn ? (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link to="/login" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                    {user.name
+                      .split(' ')
+                      .map((p) => p[0])
+                      .join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <Badge variant="outline" className="capitalize text-[10px] py-0 px-1.5 hidden xl:inline-flex">
+                  {role}
+                </Badge>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => logout()}
+                className="h-8 text-xs text-muted-foreground hover:text-foreground px-2"
+                title="Sign out"
+              >
+                <LogOutIcon className="size-3.5 mr-1" />
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <Link to="/login" className="hidden sm:inline-flex">
+              <Button size="sm" variant="default" className="h-8 text-xs px-3">
+                <LogInIcon className="size-3.5 mr-1" />
+                Sign In
+              </Button>
+            </Link>
+          )}
 
           <Button
             variant="ghost"
@@ -172,4 +200,3 @@ export function SiteHeader() {
     </header>
   )
 }
-

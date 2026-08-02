@@ -48,7 +48,9 @@ type StoreValue = {
   setRole: (role: Role) => void
   user: CurrentUser
   setUser: (user: CurrentUser) => void
+  isLoggedIn: boolean
   loginAsRole: (targetRole: Role, customUser?: Partial<CurrentUser>) => void
+  logout: () => void
   events: EventItem[]
   registrations: Registration[]
   announcements: Announcement[]
@@ -79,6 +81,7 @@ const STORAGE_KEY_REGISTRATIONS = 'sit_campus_pulse_registrations'
 const STORAGE_KEY_ANNOUNCEMENTS = 'sit_campus_pulse_announcements'
 const STORAGE_KEY_USER = 'sit_campus_pulse_user'
 const STORAGE_KEY_ROLE = 'sit_campus_pulse_role'
+const STORAGE_KEY_LOGGED_IN = 'sit_campus_pulse_logged_in'
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -97,6 +100,7 @@ function newId(prefix: string) {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>('student')
   const [user, setUserState] = useState<CurrentUser>(defaultCurrentUser)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [events, setEvents] = useState<EventItem[]>(seedEvents)
   const [registrations, setRegistrations] = useState<Registration[]>(() => [
     ...myseedRegistrations,
@@ -123,6 +127,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       const storedUser = localStorage.getItem(STORAGE_KEY_USER)
       if (storedUser) setUserState(JSON.parse(storedUser))
+
+      const storedLoggedIn = localStorage.getItem(STORAGE_KEY_LOGGED_IN)
+      if (storedLoggedIn === 'true') setIsLoggedIn(true)
     } catch (e) {
       console.warn('Could not load persistent store from localStorage:', e)
     } finally {
@@ -193,9 +200,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ...customUser,
         role: targetRole,
       })
+      setIsLoggedIn(true)
+      try {
+        localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true')
+      } catch (e) {}
     },
     [],
   )
+
+  const logout = useCallback(() => {
+    setIsLoggedIn(false)
+    try {
+      localStorage.removeItem(STORAGE_KEY_LOGGED_IN)
+    } catch (e) {}
+  }, [])
 
   const resetDatabase = useCallback(() => {
     resetEventsApi()
@@ -366,7 +384,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setRole,
       user,
       setUser,
+      isLoggedIn,
       loginAsRole,
+      logout,
       events,
       registrations,
       announcements,
@@ -391,7 +411,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       role,
       setRole,
       user,
+      setUser,
+      isLoggedIn,
       loginAsRole,
+      logout,
       events,
       registrations,
       announcements,

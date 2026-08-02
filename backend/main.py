@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import events
+from backend.routers import events, auth
 
 app = FastAPI(
     title="College Event Manager API",
@@ -24,6 +24,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(events.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

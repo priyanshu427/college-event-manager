@@ -69,3 +69,40 @@ export async function resetEventsApi(): Promise<EventItem[]> {
   }
   return res.json()
 }
+
+export async function registerApi(data: {
+  name: string
+  email: string
+  password?: string
+  role?: string
+  deptCode?: string
+  securityKey?: string
+}): Promise<{ status: string; message: string; user: any }> {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    throw new Error(`Registration failed: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function loginApi(data: {
+  identifier: string
+  password?: string
+  role?: string
+  deptCode?: string
+  securityKey?: string
+}): Promise<{ status: string; message: string; user: any }> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    throw new Error(`Login failed: ${res.statusText}`)
+  }
+  return res.json()
+}
