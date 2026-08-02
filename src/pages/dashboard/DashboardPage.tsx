@@ -765,8 +765,6 @@ export default function DashboardPage() {
           </Tabs>
         </div>
       </main>
-
-      <SiteFooter />
     </div>
   )
 }

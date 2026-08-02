@@ -59,7 +59,6 @@ export default function EventDetailPage() {
             Browse All Events
           </Button>
         </main>
-        <SiteFooter />
       </div>
     )
   }
@@ -359,8 +358,6 @@ export default function EventDetailPage() {
           </div>
         </div>
       </main>
-
-      <SiteFooter />
     </div>
   )
 }
