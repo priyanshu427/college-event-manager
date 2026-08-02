@@ -170,7 +170,7 @@ export function EventsBrowser() {
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 lg:gap-10 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((event) => (
             <EventCard
               key={event.id}

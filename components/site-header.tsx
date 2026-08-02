@@ -47,13 +47,8 @@ export function SiteHeader() {
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <QrCodeIcon className="size-5" />
           </span>
-          <span className="flex flex-col leading-none">
-            <span className="font-display text-base font-semibold tracking-tight">
-              Campus Pulse
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              Event operations, automated
-            </span>
+          <span className="font-display text-base font-semibold tracking-tight">
+            Campus Pulse
           </span>
         </Link>
 
