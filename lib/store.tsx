@@ -152,7 +152,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return
     try {
       localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(events))
-    } catch (e) {}
+    } catch (e) { }
   }, [events, isLoaded])
 
   // Persist registrations
@@ -160,7 +160,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return
     try {
       localStorage.setItem(STORAGE_KEY_REGISTRATIONS, JSON.stringify(registrations))
-    } catch (e) {}
+    } catch (e) { }
   }, [registrations, isLoaded])
 
   // Persist announcements
@@ -168,7 +168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return
     try {
       localStorage.setItem(STORAGE_KEY_ANNOUNCEMENTS, JSON.stringify(announcements))
-    } catch (e) {}
+    } catch (e) { }
   }, [announcements, isLoaded])
 
   // Persist role & user
@@ -177,7 +177,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY_ROLE, role)
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
-    } catch (e) {}
+    } catch (e) { }
   }, [role, user, isLoaded])
 
   const setUser = useCallback((newUser: CurrentUser) => {
@@ -203,7 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(true)
       try {
         localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true')
-      } catch (e) {}
+      } catch (e) { }
     },
     [],
   )
@@ -212,7 +212,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false)
     try {
       localStorage.removeItem(STORAGE_KEY_LOGGED_IN)
-    } catch (e) {}
+    } catch (e) { }
   }, [])
 
   const resetDatabase = useCallback(() => {
@@ -234,7 +234,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(STORAGE_KEY_ANNOUNCEMENTS)
       localStorage.removeItem(STORAGE_KEY_USER)
       localStorage.removeItem(STORAGE_KEY_ROLE)
-    } catch (e) {}
+    } catch (e) { }
   }, [])
 
 
@@ -340,10 +340,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       prev.map((r) =>
         r.id === id
           ? {
-              ...r,
-              checkedIn,
-              checkedInAt: checkedIn ? new Date().toISOString() : undefined,
-            }
+            ...r,
+            checkedIn,
+            checkedInAt: checkedIn ? new Date().toISOString() : undefined,
+          }
           : r,
       ),
     )

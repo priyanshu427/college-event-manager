@@ -52,7 +52,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl print-hide">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
-        <Link to="/events" className="flex items-center gap-2.5">
+        <Link to={isLoggedIn ? '/events' : '/login'} className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <QrCodeIcon className="size-5" />
           </span>
