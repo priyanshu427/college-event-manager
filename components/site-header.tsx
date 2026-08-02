@@ -8,9 +8,9 @@ import {
   QrCodeIcon,
   TicketIcon,
   XIcon,
-  ZapIcon,
   LogOutIcon,
   UserIcon,
+  AwardIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
@@ -36,11 +36,10 @@ export function SiteHeader() {
   const unread = announcements.filter((a) => !a.read).length
 
   // Build role-based links dynamically:
-  // - Home & Events: always visible
+  // - Events: always visible
   // - My Passes: visible ONLY when logged in as participant (student)
   // - Organizer: visible ONLY when logged in as event organizer / admin
   const links = [
-    { href: '/', label: 'Home', icon: ZapIcon },
     { href: '/events', label: 'Events', icon: CalendarDaysIcon },
     ...(isLoggedIn && role === 'student'
       ? [{ href: '/my-passes', label: 'My Passes', icon: TicketIcon }]
@@ -53,7 +52,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl print-hide">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2.5">
+        <Link to="/events" className="flex items-center gap-2.5">
           <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <QrCodeIcon className="size-5" />
           </span>
@@ -64,10 +63,7 @@ export function SiteHeader() {
 
         <nav className="ml-6 hidden items-center gap-1 md:flex">
           {links.map((link) => {
-            const active =
-              link.href === '/'
-                ? pathname === '/'
-                : pathname.startsWith(link.href)
+            const active = pathname.startsWith(link.href)
             return (
               <Link
                 key={link.href}
@@ -143,13 +139,13 @@ export function SiteHeader() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8 rounded-full p-0 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:opacity-80"
+                      className="size-9 rounded-xl p-0 ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:opacity-80"
                     />
                   }
                   aria-label="User menu"
                 >
-                  <Avatar className="size-8 border border-border/80">
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                  <Avatar className="size-9 rounded-xl border border-border/80 shadow-xs">
+                    <AvatarFallback className="rounded-xl bg-primary/10 text-primary text-sm font-bold">
                       {user.name
                         .split(' ')
                         .map((p) => p[0])
@@ -170,12 +166,20 @@ export function SiteHeader() {
                   <Separator className="my-1.5" />
                   <div className="flex flex-col gap-0.5">
                     <Link
+                      to="/certificates"
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground font-medium hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      <AwardIcon className="size-3.5 text-primary" />
+                      My Certificates
+                    </Link>
+                    <Link
                       to="/login"
                       className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                     >
                       <UserIcon className="size-3.5" />
                       Switch Account / Role
                     </Link>
+                    <Separator className="my-1" />
                     <button
                       type="button"
                       onClick={() => {
