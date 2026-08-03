@@ -7,7 +7,7 @@ import type {
 } from '@/lib/types'
 
 
-export const COLLEGE_NAME = 'Sunrise Institute of Technology'
+export const COLLEGE_NAME = 'IMS Engineering College'
 
 export const currentUser: CurrentUser = {
   name: 'Aarav Menon',

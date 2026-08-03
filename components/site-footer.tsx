@@ -9,12 +9,13 @@ const columns = [
       { label: 'Browse events', href: '/events' },
       { label: 'My passes', href: '/my-passes' },
       { label: 'Organizer dashboard', href: '/dashboard' },
+      { label: 'About us', href: '/about' },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { label: 'QR check-in desk', href: '/dashboard' },
+      { label: 'QR registration forms', href: '/dashboard' },
       { label: 'Certificates', href: '/my-passes' },
       { label: 'Announcements', href: '/dashboard' },
     ],

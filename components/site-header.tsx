@@ -4,7 +4,9 @@ import { useState } from 'react'
 import {
   BellIcon,
   CalendarDaysIcon,
+  InfoIcon,
   LayoutDashboardIcon,
+  LogInIcon,
   MenuIcon,
   QrCodeIcon,
   TicketIcon,
@@ -27,6 +29,7 @@ import {
 
 const links = [
   { href: '/', label: 'Home', icon: ZapIcon },
+  { href: '/about', label: 'About', icon: InfoIcon },
   { href: '/events', label: 'Events', icon: CalendarDaysIcon },
   { href: '/my-passes', label: 'My Passes', icon: TicketIcon },
   { href: '/dashboard', label: 'Organizer', icon: LayoutDashboardIcon },
@@ -123,6 +126,16 @@ export function SiteHeader() {
               </ul>
             </PopoverContent>
           </Popover>
+
+          {/* Sign In Button */}
+          <Button
+            size="sm"
+            className="hidden sm:inline-flex h-9 px-4 text-sm"
+            render={<Link to="/login" />}
+          >
+            <LogInIcon className="size-4" />
+            Sign In
+          </Button>
 
           {/* Profile Badge & Avatar */}
           <Link to="/login" className="hidden sm:flex items-center gap-2">

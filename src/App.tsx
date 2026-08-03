@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import HomePage from '@/src/pages/HomePage'
+import AboutPage from '@/src/pages/AboutPage'
 import CentralLoginPage from '@/src/pages/login/CentralLoginPage'
 import StudentLoginPage from '@/src/pages/login/StudentLoginPage'
 import OrganizerLoginPage from '@/src/pages/login/OrganizerLoginPage'
@@ -14,6 +15,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/login" element={<CentralLoginPage />} />
       <Route path="/login/student" element={<StudentLoginPage />} />
       <Route path="/login/organizer" element={<OrganizerLoginPage />} />

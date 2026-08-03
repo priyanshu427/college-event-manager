@@ -87,23 +87,7 @@ export function Hero() {
             <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
           </div>
 
-          <div className="absolute -bottom-6 -left-3 w-56 rounded-2xl bg-card/95 p-4 ring-1 ring-foreground/10 shadow-xl backdrop-blur sm:left-6">
-            <div className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <ScanLineIcon className="size-4" />
-              </span>
-              <div className="flex flex-col">
-                <p className="text-xs text-muted-foreground">Gate check-in</p>
-                <p className="text-sm font-medium">SIT-7KQ4MZ verified</p>
-              </div>
-            </div>
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-4/5 rounded-full bg-primary" />
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              412 of 520 passes scanned
-            </p>
-          </div>
+
 
           <div className="absolute -top-4 right-0 flex items-center gap-2 rounded-2xl bg-card/95 px-4 py-3 ring-1 ring-foreground/10 shadow-xl backdrop-blur sm:right-4">
             <span className="flex size-8 items-center justify-center rounded-lg bg-chart-2/15 text-chart-2">
