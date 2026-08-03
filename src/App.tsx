@@ -10,6 +10,7 @@ import EventsPage from '@/src/pages/events/EventsPage'
 import EventDetailPage from '@/src/pages/events/EventDetailPage'
 import MyPassesPage from '@/src/pages/my-passes/MyPassesPage'
 import DashboardPage from '@/src/pages/dashboard/DashboardPage'
+import CertificatesPage from '@/src/pages/certificates/CertificatesPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<EventDetailPage />} />
       <Route path="/my-passes" element={<MyPassesPage />} />
+      <Route path="/certificates" element={<CertificatesPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
     </Routes>
   )

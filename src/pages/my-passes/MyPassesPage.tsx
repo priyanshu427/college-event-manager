@@ -209,8 +209,6 @@ export default function MyPassesPage() {
           )}
         </div>
       </main>
-
-      <SiteFooter />
     </div>
   )
 }

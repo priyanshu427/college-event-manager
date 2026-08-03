@@ -1,11 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import events
+from backend.database import engine, Base
+from backend.routers import events, auth
+from backend import models
+
+# Automatically create all database tables on startup
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="College Event Manager API",
     version="1.0.0",
-    description="Standalone FastAPI backend for College Event Manager",
+    description="Standalone FastAPI backend with MySQL & SQLAlchemy ORM",
 )
 
 # CORS middleware configuration
@@ -24,8 +29,12 @@ app.add_middleware(
 
 # Include routers
 app.include_router(events.router)
+app.include_router(auth.router)
 
 
 @app.get("/")
 def read_root():
-    return {"message": "College Event Manager FastAPI Backend"}
+    return {
+        "message": "College Event Manager FastAPI Backend with MySQL & SQLAlchemy",
+        "status": "online"
+    }

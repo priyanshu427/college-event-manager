@@ -1,12 +1,16 @@
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
+import json
 import uuid
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from backend.database import get_db
+from backend import models
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
-
-class EventItem(BaseModel):
+class EventItemSchema(BaseModel):
     id: str
     title: str
     tagline: str
@@ -26,6 +30,9 @@ class EventItem(BaseModel):
     prize: Optional[str] = None
     image: str
     tags: List[str]
+
+    class Config:
+        from_attributes = True
 
 
 class EventCreate(BaseModel):
@@ -102,191 +109,283 @@ INITIAL_SEED_EVENTS = [
         "date": "2026-08-29",
         "startTime": "17:30",
         "endTime": "22:00",
-        "venue": "Open Air Amphitheatre",
-        "department": "Student Affairs",
-        "organizer": "Cultural Committee",
+        "venue": "Main Open Air Theatre",
+        "department": "Cultural Committee",
+        "organizer": "Rhythmix Club",
         "capacity": 1200,
         "fee": 0,
-        "teamEvent": True,
-        "teamSize": 8,
-        "prize": "Rolling trophy",
+        "teamEvent": False,
+        "teamSize": 1,
+        "prize": "Trophies + Certificates",
         "image": "/events/cultural-night.png",
-        "tags": ["Dance", "Music", "Fashion", "Main Stage"],
+        "tags": ["Dance", "Music", "Fashion", "Celebrity Act"],
     },
     {
         "id": "ev-robotics",
         "title": "RoboSprint Line Follower Challenge",
         "tagline": "Fastest bot on the track takes it all.",
-        "description": "Bring your own bot and race it through a timed line-following circuit with three difficulty laps. Scrutiny happens at the pit desk, and the leaderboard updates live after every heat.",
+        "description": "Custom autonomous bots compete on an obstacle-laden black line track. Precision tuning, sensor calibration and speed decide who advances through knockout rounds to the finals.",
         "category": "Technical",
         "status": "live",
         "date": "2026-08-01",
         "startTime": "10:00",
         "endTime": "16:30",
         "venue": "Mechanical Workshop Arena",
-        "department": "Mechatronics",
-        "organizer": "Robotics Society",
+        "department": "Robotics & Automation",
+        "organizer": "RoboCell",
         "capacity": 120,
         "fee": 200,
         "teamEvent": True,
         "teamSize": 3,
-        "prize": "Rs. 25,000 pool",
+        "prize": "Rs. 30,000",
         "image": "/events/robotics.png",
-        "tags": ["Robotics", "Arena", "Live Scoring"],
+        "tags": ["Robotics", "Hardware", "Live", "Track"],
     },
     {
-        "id": "ev-workshop",
-        "title": "Applied AI Bootcamp",
-        "tagline": "From notebook to deployed model in one day.",
-        "description": "A hands-on bootcamp covering data prep, fine-tuning and shipping an inference endpoint. Seats are limited because every participant gets a mentor-reviewed project at the end.",
+        "id": "ev-uiux",
+        "title": "Pixel Craft UI/UX Designathon",
+        "tagline": "Design accessible campus solutions in 4 hours.",
+        "description": "A focused sprint to redesign one real-world student portal touchpoint. Participants deliver Figma prototypes evaluated on usability, accessibility contrast and design system consistency.",
         "category": "Workshop",
         "status": "upcoming",
         "date": "2026-08-14",
-        "startTime": "09:30",
-        "endTime": "17:00",
-        "venue": "Seminar Hall B, Block C",
-        "department": "Artificial Intelligence",
-        "organizer": "IEEE Student Chapter",
-        "capacity": 90,
-        "fee": 250,
+        "startTime": "11:00",
+        "endTime": "15:00",
+        "venue": "Design Studio 2",
+        "department": "Information Technology",
+        "organizer": "Design Guild",
+        "capacity": 80,
+        "fee": 50,
         "teamEvent": False,
-        "prize": "Certified by IEEE SB",
-        "image": "/events/ai-workshop.png",
-        "tags": ["AI", "Hands-on", "Certificate"],
+        "teamSize": 1,
+        "prize": "Figma Subscriptions + Goodies",
+        "image": "/events/designathon.png",
+        "tags": ["Figma", "UI/UX", "Sprint", "Solo"],
     },
     {
-        "id": "ev-summit",
-        "title": "Founders Summit 2026",
-        "tagline": "Nine founders. One stage. Zero fluff.",
-        "description": "A half-day summit with founder keynotes, a live pitch clinic and an investor AMA. Selected teams get a ten minute slot to pitch to the panel with feedback recorded on the spot.",
-        "category": "Seminar",
-        "status": "upcoming",
-        "date": "2026-09-05",
-        "startTime": "10:00",
-        "endTime": "15:30",
-        "venue": "Central Auditorium",
-        "department": "Management Studies",
-        "organizer": "E-Cell",
-        "capacity": 500,
-        "fee": 100,
-        "teamEvent": False,
-        "prize": "Incubation shortlist",
-        "image": "/events/startup-summit.png",
-        "tags": ["Startups", "Keynote", "Pitch"],
-    },
-    {
-        "id": "ev-sports",
-        "title": "Annual Athletics Meet",
-        "tagline": "Track, field and house pride.",
-        "description": "Two days of track and field across sprints, relays, long jump and shot put. Heat sheets and bib numbers are issued automatically from the registration list.",
-        "category": "Sports",
-        "status": "upcoming",
-        "date": "2026-09-12",
-        "startTime": "07:00",
-        "endTime": "18:00",
-        "venue": "University Athletics Track",
-        "department": "Physical Education",
-        "organizer": "Sports Council",
-        "capacity": 600,
-        "fee": 0,
-        "teamEvent": False,
-        "prize": "Medals and house points",
-        "image": "/events/sports-meet.png",
-        "tags": ["Athletics", "Two Days", "Medals"],
-    },
-    {
-        "id": "ev-bands",
+        "id": "ev-battlebands",
         "title": "Battle of the Bands",
         "tagline": "Eight bands, one encore.",
-        "description": "Campus bands go head to head across two rounds judged on originality, tightness and crowd response. Sound check slots are auto-assigned an hour before the show.",
+        "description": "Inter-college band championship featuring rock, metal and fusion genres. Each band gets a 20-minute stage slot evaluated on originality, stage presence and crowd engagement.",
         "category": "Cultural",
-        "status": "completed",
-        "date": "2026-07-18",
+        "status": "upcoming",
+        "date": "2026-08-18",
         "startTime": "18:00",
         "endTime": "22:30",
         "venue": "Quadrangle Stage",
-        "department": "Student Affairs",
-        "organizer": "Music Club",
+        "department": "Music Society",
+        "organizer": "Octave Club",
         "capacity": 800,
         "fee": 50,
         "teamEvent": True,
         "teamSize": 6,
-        "prize": "Rs. 20,000 and studio time",
+        "prize": "Rs. 40,000 + Studio Recording Time",
         "image": "/events/battle-of-bands.png",
-        "tags": ["Live Music", "Bands", "Finals"],
+        "tags": ["Music", "Live Band", "Stage", "Competition"],
     },
     {
-        "id": "ev-techfest",
-        "title": "Aurora Tech Fest Expo",
-        "tagline": "Fifty stalls of student engineering.",
-        "description": "The open expo day of the fest where every department showcases working projects, with a public voting track for the people-choice award. Walk-in check-in is handled at the gate desk.",
-        "category": "Fest",
+        "id": "ev-esports",
+        "title": "Valorant Campus Championship",
+        "tagline": "5v5 tactical shooter tournament.",
+        "description": "LAN tournament played on dedicated tournament servers with live shoutcasting in the auditorium. Double elimination bracket with custom lobby settings.",
+        "category": "Gaming",
+        "status": "upcoming",
+        "date": "2026-08-25",
+        "startTime": "13:00",
+        "endTime": "20:00",
+        "venue": "Seminar Hall A",
+        "department": "Esports Alliance",
+        "organizer": "GG Campus",
+        "capacity": 160,
+        "fee": 250,
+        "teamEvent": True,
+        "teamSize": 5,
+        "prize": "Rs. 25,000",
+        "image": "/events/esports.png",
+        "tags": ["Esports", "Valorant", "LAN", "Shoutcast"],
+    },
+    {
+        "id": "ev-sports",
+        "title": "Inter-Department Football Cup",
+        "tagline": "Pride, passion and 90 minutes on the turf.",
+        "description": "Annual 7-a-side football tournament for department teams. Knockout matches played under floodlights with official FIFA-certified student referees.",
+        "category": "Sports",
         "status": "completed",
-        "date": "2026-07-04",
-        "startTime": "09:00",
-        "endTime": "19:00",
-        "venue": "Main Campus Grounds",
-        "department": "All Departments",
-        "organizer": "Fest Core Team",
-        "capacity": 2000,
+        "date": "2026-07-20",
+        "startTime": "16:00",
+        "endTime": "20:00",
+        "venue": "Sports Complex Turf",
+        "department": "Physical Education",
+        "organizer": "Sports Council",
+        "capacity": 300,
         "fee": 0,
+        "teamEvent": True,
+        "teamSize": 10,
+        "prize": "Championship Trophy",
+        "image": "/events/football-cup.png",
+        "tags": ["Football", "Turf", "Knockout", "Sports"],
+    },
+    {
+        "id": "ev-ai-workshop",
+        "title": "Generative AI & LLM Deployment Workshop",
+        "tagline": "From prompt engineering to production APIs.",
+        "description": "Hands-on masterclass building RAG pipelines using LangChain, FastHTML and local LLM backends. Laptop with Python 3.10+ required for hands-on labs.",
+        "category": "Workshop",
+        "status": "completed",
+        "date": "2026-07-25",
+        "startTime": "10:00",
+        "endTime": "16:00",
+        "venue": "Central Computing Center",
+        "department": "Computer Science",
+        "organizer": "AI Research Group",
+        "capacity": 100,
+        "fee": 100,
         "teamEvent": False,
-        "prize": "People-choice trophy",
-        "image": "/events/tech-fest.png",
-        "tags": ["Expo", "Open Day", "Voting"],
+        "teamSize": 1,
+        "prize": "Certificate of Completion",
+        "image": "/events/ai-workshop.png",
+        "tags": ["AI", "LLMs", "Python", "Hands-on"],
     },
 ]
 
-# In-memory storage for events
-events_db: List[dict] = [dict(e) for e in INITIAL_SEED_EVENTS]
+def db_event_to_dict(event: models.Event) -> dict:
+    return {
+        "id": event.id,
+        "title": event.title,
+        "tagline": event.tagline or "",
+        "description": event.description or "",
+        "category": event.category,
+        "status": event.status,
+        "date": event.date,
+        "startTime": event.startTime or "",
+        "endTime": event.endTime or "",
+        "venue": event.venue or "",
+        "department": event.department or "",
+        "organizer": event.organizer or "",
+        "capacity": event.capacity,
+        "fee": event.fee,
+        "teamEvent": event.teamEvent,
+        "teamSize": event.teamSize,
+        "prize": event.prize,
+        "image": event.image or "/events/hackathon.png",
+        "tags": json.loads(event.tags) if event.tags and event.tags.startswith("[") else (event.tags.split(",") if event.tags else []),
+    }
 
 
-@router.get("", response_model=List[EventItem])
-@router.get("/", response_model=List[EventItem])
-def get_events():
-    return events_db
+def seed_database_events(db: Session):
+    if db.query(models.Event).count() == 0:
+        for ev in INITIAL_SEED_EVENTS:
+            db_ev = models.Event(
+                id=ev["id"],
+                title=ev["title"],
+                tagline=ev["tagline"],
+                description=ev["description"],
+                category=ev["category"],
+                status=ev["status"],
+                date=ev["date"],
+                startTime=ev["startTime"],
+                endTime=ev["endTime"],
+                venue=ev["venue"],
+                department=ev["department"],
+                organizer=ev["organizer"],
+                capacity=ev["capacity"],
+                fee=ev["fee"],
+                teamEvent=ev["teamEvent"],
+                teamSize=ev.get("teamSize"),
+                prize=ev.get("prize"),
+                image=ev["image"],
+                tags=json.dumps(ev["tags"]),
+            )
+            db.add(db_ev)
+        db.commit()
 
 
-@router.get("/{event_id}", response_model=EventItem)
-def get_event(event_id: str):
-    for event in events_db:
-        if event["id"] == event_id:
-            return event
-    raise HTTPException(status_code=404, detail="Event not found")
+@router.get("", response_model=List[EventItemSchema])
+def get_all_events(db: Session = Depends(get_db)):
+    seed_database_events(db)
+    events = db.query(models.Event).all()
+    return [db_event_to_dict(e) for e in events]
 
 
-@router.post("", response_model=EventItem, status_code=status.HTTP_201_CREATED)
-@router.post("/", response_model=EventItem, status_code=status.HTTP_201_CREATED)
-def create_event(event: EventCreate):
-    new_id = f"ev-{uuid.uuid4().hex[:7]}"
-    new_event = {"id": new_id, **event.model_dump()}
-    events_db.insert(0, new_event)
-    return new_event
+@router.get("/{id}", response_model=EventItemSchema)
+def get_event(id: str, db: Session = Depends(get_db)):
+    seed_database_events(db)
+    event = db.query(models.Event).filter(models.Event.id == id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id '{id}' not found",
+        )
+    return db_event_to_dict(event)
 
 
-@router.put("/{event_id}", response_model=EventItem)
-def update_event(event_id: str, patch: EventUpdate):
-    for index, existing_event in enumerate(events_db):
-        if existing_event["id"] == event_id:
-            update_data = patch.model_dump(exclude_unset=True)
-            updated_event = {**existing_event, **update_data}
-            events_db[index] = updated_event
-            return updated_event
-    raise HTTPException(status_code=404, detail="Event not found")
+@router.post("", response_model=EventItemSchema, status_code=status.HTTP_201_CREATED)
+def create_event(event_in: EventCreate, db: Session = Depends(get_db)):
+    new_id = f"ev-{uuid.uuid4().hex[:8]}"
+    db_event = models.Event(
+        id=new_id,
+        title=event_in.title,
+        tagline=event_in.tagline,
+        description=event_in.description,
+        category=event_in.category,
+        status=event_in.status,
+        date=event_in.date,
+        startTime=event_in.startTime,
+        endTime=event_in.endTime,
+        venue=event_in.venue,
+        department=event_in.department,
+        organizer=event_in.organizer,
+        capacity=event_in.capacity,
+        fee=event_in.fee,
+        teamEvent=event_in.teamEvent,
+        teamSize=event_in.teamSize,
+        prize=event_in.prize,
+        image=event_in.image,
+        tags=json.dumps(event_in.tags),
+    )
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event_to_dict(db_event)
 
 
-@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(event_id: str):
-    global events_db
-    for index, existing_event in enumerate(events_db):
-        if existing_event["id"] == event_id:
-            events_db.pop(index)
-            return None
-    raise HTTPException(status_code=404, detail="Event not found")
+@router.put("/{id}", response_model=EventItemSchema)
+def update_event(id: str, patch: EventUpdate, db: Session = Depends(get_db)):
+    db_event = db.query(models.Event).filter(models.Event.id == id).first()
+    if not db_event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id '{id}' not found",
+        )
+
+    update_data = patch.dict(exclude_unset=True)
+    for field, val in update_data.items():
+        if field == "tags" and val is not None:
+            setattr(db_event, field, json.dumps(val))
+        else:
+            setattr(db_event, field, val)
+
+    db.commit()
+    db.refresh(db_event)
+    return db_event_to_dict(db_event)
 
 
-@router.post("/reset", response_model=List[EventItem])
-def reset_events():
-    global events_db
-    events_db = [dict(e) for e in INITIAL_SEED_EVENTS]
-    return events_db
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_event(id: str, db: Session = Depends(get_db)):
+    db_event = db.query(models.Event).filter(models.Event.id == id).first()
+    if not db_event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id '{id}' not found",
+        )
+    db.delete(db_event)
+    db.commit()
+
+
+@router.post("/reset", response_model=List[EventItemSchema])
+def reset_events(db: Session = Depends(get_db)):
+    db.query(models.Event).delete()
+    db.commit()
+    seed_database_events(db)
+    events = db.query(models.Event).all()
+    return [db_event_to_dict(e) for e in events]
