@@ -7,22 +7,25 @@ import { Features } from '@/components/landing/features'
 import { HowItWorks } from '@/components/landing/how-it-works'
 import { UpcomingEvents } from '@/components/landing/upcoming-events'
 import { CtaBand } from '@/components/landing/cta-band'
+import { AnimatedGradientBg } from '@/components/ui/animated-gradient-bg'
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <SiteHeader />
+    <AnimatedGradientBg accentColor="neutral">
+      <div className="flex min-h-dvh flex-col">
+        <SiteHeader />
 
-      <main className="flex-1">
-        <Hero />
-        <StatsStrip />
-        <UpcomingEvents />
-        <Features />
-        <HowItWorks />
-        <CtaBand />
-      </main>
+        <main className="flex-1">
+          <Hero />
+          <StatsStrip />
+          <UpcomingEvents />
+          <Features />
+          <HowItWorks />
+          <CtaBand />
+        </main>
 
-      <SiteFooter />
-    </div>
+        <SiteFooter />
+      </div>
+    </AnimatedGradientBg>
   )
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRightIcon } from 'lucide-react'
+import { ArrowRightIcon, Sparkles } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { EventCard } from '@/components/event-card'
@@ -11,17 +11,24 @@ export function UpcomingEvents() {
     .slice(0, 3)
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6">
+    <section className="relative isolate mx-auto w-full max-w-7xl px-4 py-16 sm:py-20 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex max-w-xl flex-col gap-3">
-          <p className="text-sm font-medium text-primary">Happening next</p>
-          <h2 className="font-display text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        <div className="flex max-w-xl flex-col gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+            <Sparkles className="size-3.5" />
+            <span>Happening next</span>
+          </div>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
             Registrations open right now
           </h2>
         </div>
-        <Button variant="outline" render={<Link to="/events" />}>
+        <Button
+          variant="outline"
+          className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-200/80 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 transition-all text-slate-700 dark:text-slate-200 shadow-xs"
+          render={<Link to="/events" />}
+        >
           See all events
-          <ArrowRightIcon data-icon="inline-end" />
+          <ArrowRightIcon data-icon="inline-end" className="text-indigo-600 dark:text-indigo-400" />
         </Button>
       </div>
 
