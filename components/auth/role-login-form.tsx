@@ -52,8 +52,8 @@ export function RoleLoginForm({
   const [loginSuccess, setLoginSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Handle role tab change
-  const handleTabChange = (role: Role) => {
+  // Handle role radio button change
+  const handleRoleChange = (role: Role) => {
     setActiveRole(role)
     setErrorMessage('')
     setIdentifier('')
@@ -238,52 +238,24 @@ export function RoleLoginForm({
 
   return (
     <div className="mx-auto w-full max-w-md">
-      {/* Top Heading: Dynamically updates between Sign In and Register mode */}
-      {showRoleTabs && (
-        <div className="mb-2 text-center">
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {isSignUp ? 'Register for Campus Pulse' : 'Sign In to Campus Pulse'}
-          </h1>
-          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
-            {isSignUp
-              ? 'Fill in your details below to create your portal account.'
-              : 'Select your role below to access the Student, Organizer, or Admin portal.'}
-          </p>
-        </div>
-      )}
-
-      {/* Role Selection Tabs */}
-      {showRoleTabs && (
-        <div className="mb-2.5 grid grid-cols-3 gap-1 rounded-2xl bg-white/80 p-1 backdrop-blur-md shadow-sm border border-slate-200/80 dark:bg-slate-900/80 dark:border-slate-800">
-          {(['student', 'organizer', 'admin'] as Role[]).map((r) => {
-            const isSelected = activeRole === r
-            const Icon = roleConfig[r].icon
-            return (
-              <button
-                key={r}
-                type="button"
-                onClick={() => handleTabChange(r)}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-2 text-xs font-semibold transition-all duration-200',
-                  isSelected
-                    ? 'bg-white text-slate-900 shadow-md dark:bg-slate-800 dark:text-white'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-white/50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50'
-                )}
-              >
-                <Icon className={cn('size-3.5', isSelected ? 'text-primary' : 'text-slate-400')} />
-                <span className="capitalize text-[11px]">{r === 'organizer' ? 'Organizer' : r}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
+      {/* Top Heading */}
+      <div className="mb-2.5 text-center">
+        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          {isSignUp ? 'Register for Campus Pulse' : 'Sign In to Campus Pulse'}
+        </h1>
+        <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+          {isSignUp
+            ? 'Fill in your details below to create your portal account.'
+            : 'Select your role and enter credentials to access your portal.'}
+        </p>
+      </div>
 
       {/* Main Glassmorphic Card */}
       <div className="relative overflow-hidden rounded-3xl glass-card-light p-4 sm:p-5 transition-all duration-300 shadow-xl border border-slate-200/90 dark:border-slate-800">
         {/* Top Decorative Gradient Line */}
         <div
           className={cn(
-            'absolute top-0 inset-x-0 h-1 bg-gradient-to-r',
+            'absolute top-0 inset-x-0 h-1 bg-gradient-to-r transition-all duration-300',
             currentConfig.accentGradient
           )}
         />
@@ -293,7 +265,7 @@ export function RoleLoginForm({
           <div className="flex size-7 items-center justify-center rounded-lg bg-white shadow-xs border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
             <ActiveIcon className="size-3.5 text-primary" />
           </div>
-          <Badge variant="outline" className={cn('font-semibold px-2.5 py-0.5 text-xs', currentConfig.badgeBg)}>
+          <Badge variant="outline" className={cn('font-semibold px-2.5 py-0.5 text-xs transition-colors duration-200', currentConfig.badgeBg)}>
             {currentConfig.title} — {isSignUp ? 'Create Account' : 'Sign In'}
           </Badge>
         </div>
@@ -310,7 +282,7 @@ export function RoleLoginForm({
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-2.5" autoComplete="off">
+          <form onSubmit={handleSubmit} className="space-y-3" autoComplete="off">
             {/* Error Banner */}
             {errorMessage && (
               <div className="flex items-center gap-2 rounded-xl bg-rose-50 p-2.5 text-xs text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
@@ -318,6 +290,53 @@ export function RoleLoginForm({
                 <span>{errorMessage}</span>
               </div>
             )}
+
+            {/* Role Selection Radio Group */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                Select Portal Role
+              </Label>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Select role">
+                {(['student', 'organizer', 'admin'] as Role[]).map((r) => {
+                  const isSelected = activeRole === r
+                  const Icon = roleConfig[r].icon
+                  return (
+                    <label
+                      key={r}
+                      className={cn(
+                        'flex items-center gap-1.5 cursor-pointer rounded-xl py-2 px-2 sm:px-2.5 border transition-all duration-200 select-none text-xs font-medium',
+                        isSelected
+                          ? 'bg-white border-slate-300 shadow-md ring-2 ring-primary/20 dark:bg-slate-800 dark:border-slate-700'
+                          : 'bg-white/40 border-slate-200/80 hover:bg-white/80 dark:bg-slate-900/40 dark:border-slate-800 dark:hover:bg-slate-800/50'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="userRole"
+                        value={r}
+                        checked={isSelected}
+                        onChange={() => handleRoleChange(r)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={cn(
+                          'size-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all duration-200',
+                          isSelected
+                            ? 'border-primary bg-primary'
+                            : 'border-slate-400 bg-transparent dark:border-slate-600'
+                        )}
+                      >
+                        {isSelected && <div className="size-1.5 rounded-full bg-white animate-in zoom-in-50" />}
+                      </div>
+                      <Icon className={cn('size-3.5 shrink-0 hidden sm:inline-block', isSelected ? 'text-primary' : 'text-slate-400')} />
+                      <span className={cn('capitalize text-[11px] font-semibold truncate', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400')}>
+                        {r === 'organizer' ? 'Organizer' : r}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
 
             {/* Registration Mode: Full Name Field */}
             {isSignUp && (
