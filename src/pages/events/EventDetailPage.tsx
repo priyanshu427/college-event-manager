@@ -11,20 +11,28 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
+import { registerForEventApi } from '@/lib/api'
 import { categoryStyles, dayOfMonth, monthLabel, formatFee, formatTime } from '@/lib/format'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getEvent, isRegistered, register, registrationsFor, user } = useStore()
+  const {
+    getEvent,
+    isRegistered,
+    register,
+    addRegistration,
+    registrationsFor,
+    user,
+    token,
+    isLoggedIn,
+  } = useStore()
 
   const event = id ? getEvent(id) : undefined
   const registered = event ? isRegistered(event.id) : false
@@ -32,19 +40,10 @@ export default function EventDetailPage() {
   const seatsTaken = registrations.length
   const seatsLeft = event ? Math.max(0, event.capacity - seatsTaken) : 0
 
-  // Registration Form state
+  // 1-Click Registration state
   const [modalOpen, setModalOpen] = useState(false)
-  const [name, setName] = useState(user.name)
-  const [email, setEmail] = useState(user.email)
-  const [phone, setPhone] = useState(user.phone)
-  const [college, setCollege] = useState(user.college)
-  const [department, setDepartment] = useState(user.department)
-  const [year, setYear] = useState(user.year)
-  const [rollNumber, setRollNumber] = useState(user.rollNumber)
-  const [teamName, setTeamName] = useState('')
-  const [members, setMembers] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successRegistration, setSuccessRegistration] = useState<any>(null)
+  const [errorMessage, setErrorMessage] = useState('')
 
   if (!event) {
     return (
@@ -63,28 +62,64 @@ export default function EventDetailPage() {
     )
   }
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  const handleOneClickRegister = async () => {
+    if (!isLoggedIn) {
+      navigate('/login')
+      return
+    }
 
-    setTimeout(() => {
-      const created = register({
+    setIsSubmitting(true)
+    setErrorMessage('')
+
+    try {
+      const authToken = token || user.id || 'usr-student-aarav'
+      const res = await registerForEventApi(event.id, authToken)
+      const ticketId = res.ticket_id || res.registration?.ticket_id || res.registration?.code
+
+      // Add to client store so My Passes renders this dynamic ticket immediately
+      addRegistration({
+        id: res.registration?.id ? String(res.registration.id) : `reg-${ticketId}`,
+        code: ticketId,
         eventId: event.id,
-        name,
-        email,
-        phone,
-        college,
-        department,
-        year,
-        rollNumber,
-        teamName: event.teamEvent ? teamName : undefined,
-        members: event.teamEvent ? members : undefined,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '98765 43210',
+        college: user.college || 'IMS Engineering College',
+        department: user.department || 'Computer Science',
+        year: user.year || '3rd Year',
+        rollNumber: user.rollNumber || 'SIT21CS042',
+        registeredAt: new Date().toISOString(),
+        checkedIn: false,
         paid: event.fee === 0,
       })
 
+      setModalOpen(false)
+      // Redirect student directly to "My Passes" where QR code is rendered
+      navigate('/my-passes')
+    } catch (err: any) {
+      if (err.message && err.message.includes('Already registered')) {
+        setModalOpen(false)
+        navigate('/my-passes')
+        return
+      }
+
+      // Offline fallback: register locally and proceed
+      const fallbackTicket = register({
+        eventId: event.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        college: user.college,
+        department: user.department,
+        year: user.year,
+        rollNumber: user.rollNumber,
+        paid: event.fee === 0,
+      })
+      setModalOpen(false)
+      navigate('/my-passes')
+    } finally {
       setIsSubmitting(false)
-      setSuccessRegistration(created)
-    }, 600)
+    }
   }
 
   return (
@@ -206,132 +241,68 @@ export default function EventDetailPage() {
                 ) : (
                   <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                     <DialogTrigger render={
-                      <Button size="lg" className="w-full sm:w-auto px-8 font-semibold rounded-xl">
-                        Register Now
+                      <Button size="lg" className="w-full sm:w-auto px-8 font-semibold rounded-xl gap-2 shadow-sm">
+                        <Sparkles className="size-4" />
+                        1-Click Register
                       </Button>
                     } />
-                    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle className="text-xl font-bold">
-                          Register for {event.title}
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                          <Sparkles className="size-5 text-primary" />
+                          1-Click Event Registration
                         </DialogTitle>
                       </DialogHeader>
 
-                      {successRegistration ? (
-                        <div className="py-6 text-center space-y-4">
-                          <CheckCircle2 className="size-16 text-emerald-500 mx-auto animate-bounce" />
-                          <h3 className="text-lg font-bold text-foreground">
-                            Registration Successful!
-                          </h3>
-                          <p className="text-xs text-muted-foreground">
-                            Your pass code is <strong className="text-primary font-mono">{successRegistration.code}</strong>. You can view your dynamic QR ticket in My Passes.
-                          </p>
-                          <div className="flex justify-center gap-3 pt-2">
-                            <Button onClick={() => setModalOpen(false)} variant="outline">
-                              Close
-                            </Button>
-                            <Button render={<Link to="/my-passes" />}>
-                              View My Pass
-                            </Button>
+                      <div className="space-y-4 pt-2">
+                        {errorMessage && (
+                          <div className="rounded-xl bg-destructive/10 p-3 text-xs text-destructive border border-destructive/20">
+                            {errorMessage}
+                          </div>
+                        )}
+
+                        <div className="rounded-2xl border bg-muted/40 p-4 space-y-3">
+                          <div className="flex items-center justify-between pb-2 border-b">
+                            <span className="text-xs text-muted-foreground">Event:</span>
+                            <span className="text-xs font-bold text-foreground truncate max-w-48 text-right">{event.title}</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-2 border-b">
+                            <span className="text-xs text-muted-foreground">Student Name:</span>
+                            <span className="text-xs font-semibold text-foreground">{user.name}</span>
+                          </div>
+                          <div className="flex items-center justify-between pb-2 border-b">
+                            <span className="text-xs text-muted-foreground">Roll Number:</span>
+                            <span className="text-xs font-mono font-medium text-foreground">{user.rollNumber || 'SIT21CS042'}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Entry Fee:</span>
+                            <span className="text-xs font-bold text-primary">{formatFee(event.fee)}</span>
                           </div>
                         </div>
-                      ) : (
-                        <form onSubmit={handleRegisterSubmit} className="space-y-4 pt-2">
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label htmlFor="regName" className="text-xs">Full Name</Label>
-                              <Input
-                                id="regName"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label htmlFor="regEmail" className="text-xs">Email Address</Label>
-                              <Input
-                                id="regEmail"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                              />
-                            </div>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label htmlFor="regRoll" className="text-xs">Roll Number</Label>
-                              <Input
-                                id="regRoll"
-                                value={rollNumber}
-                                onChange={(e) => setRollNumber(e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label htmlFor="regPhone" className="text-xs">Phone Number</Label>
-                              <Input
-                                id="regPhone"
-                                value={phone}
-                                onChange={(e) => setPhone(e.target.value)}
-                                required
-                              />
-                            </div>
-                          </div>
+                        <p className="text-[11px] text-muted-foreground text-center">
+                          Click below to instantly generate your digital QR entry pass with your student credentials.
+                        </p>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <Label htmlFor="regDept" className="text-xs">Department</Label>
-                              <Input
-                                id="regDept"
-                                value={department}
-                                onChange={(e) => setDepartment(e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label htmlFor="regYear" className="text-xs">Academic Year</Label>
-                              <Input
-                                id="regYear"
-                                value={year}
-                                onChange={(e) => setYear(e.target.value)}
-                                required
-                              />
-                            </div>
-                          </div>
-
-                          {event.teamEvent && (
-                            <div className="space-y-3 pt-2 border-t">
-                              <div className="space-y-1">
-                                <Label htmlFor="teamName" className="text-xs font-semibold">Team Name</Label>
-                                <Input
-                                  id="teamName"
-                                  placeholder="e.g. Cyber Knights"
-                                  value={teamName}
-                                  onChange={(e) => setTeamName(e.target.value)}
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label htmlFor="members" className="text-xs">Team Members (Names & Roll Numbers)</Label>
-                                <Input
-                                  id="members"
-                                  placeholder="e.g. Rahul S. (CS01), Priya M. (CS02)"
-                                  value={members}
-                                  onChange={(e) => setMembers(e.target.value)}
-                                />
-                              </div>
-                            </div>
+                        <Button
+                          onClick={handleOneClickRegister}
+                          disabled={isSubmitting}
+                          size="lg"
+                          className="w-full h-12 font-bold text-sm rounded-xl gap-2 shadow-md"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              Securing Your Pass...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="size-4" />
+                              Confirm 1-Click Registration
+                            </>
                           )}
-
-                          <div className="pt-2">
-                            <Button type="submit" disabled={isSubmitting} className="w-full h-11 font-semibold">
-                              {isSubmitting ? 'Processing Registration...' : `Confirm Registration (${formatFee(event.fee)})`}
-                            </Button>
-                          </div>
-                        </form>
-                      )}
+                        </Button>
+                      </div>
                     </DialogContent>
                   </Dialog>
                 )}

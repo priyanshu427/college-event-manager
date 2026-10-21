@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -13,8 +13,10 @@ import {
   Calendar,
   DollarSign,
   AlertTriangle,
+  Clock,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
+import { fetchEventRosterApi, verifyAttendanceApi } from '@/lib/api'
 import type { EventCategory } from '@/lib/types'
 import { EVENT_CATEGORIES, formatFee } from '@/lib/format'
 import { SiteHeader } from '@/components/site-header'
@@ -82,9 +84,25 @@ export default function DashboardPage() {
 
   // Scanner Check In State
   const [scanCode, setScanCode] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
   const [scanResult, setScanResult] = useState<any>(null)
 
-  // Roster Filter State
+  // Roster State
+  const [rosterData, setRosterData] = useState<Array<{
+    id: number | string
+    ticket_id: string
+    code: string
+    event_id: string
+    event_title?: string
+    user_id: string
+    student_name: string
+    name: string
+    rollNumber: string
+    email: string
+    department?: string
+    attendance_verified: boolean
+  }>>([])
+  const [isLoadingRoster, setIsLoadingRoster] = useState(false)
   const [rosterSearch, setRosterSearch] = useState('')
   const [selectedEventIdFilter, setSelectedEventIdFilter] = useState('all')
 
@@ -94,7 +112,44 @@ export default function DashboardPage() {
   const [annEventId, setAnnEventId] = useState('all')
   const [annPriority, setAnnPriority] = useState<'normal' | 'urgent'>('normal')
 
-  // Handlers
+
+  const loadRoster = async (eventId: string = selectedEventIdFilter) => {
+    setIsLoadingRoster(true)
+    try {
+      const data = await fetchEventRosterApi(eventId)
+      if (Array.isArray(data)) {
+        setRosterData(data)
+      }
+    } catch (err) {
+      console.warn('Could not fetch roster from API, falling back to store:', err)
+      // Fallback from store registrations
+      const mapped = registrations
+        .filter((r) => eventId === 'all' || r.eventId === eventId)
+        .map((r) => ({
+          id: r.id,
+          ticket_id: r.code,
+          code: r.code,
+          event_id: r.eventId,
+          event_title: events.find((e) => e.id === r.eventId)?.title || 'Campus Event',
+          user_id: r.id,
+          student_name: r.name,
+          name: r.name,
+          rollNumber: r.rollNumber,
+          email: r.email,
+          department: r.department,
+          attendance_verified: r.checkedIn,
+        }))
+      setRosterData(mapped)
+    } finally {
+      setIsLoadingRoster(false)
+    }
+  }
+
+  useEffect(() => {
+    loadRoster(selectedEventIdFilter)
+  }, [selectedEventIdFilter, registrations])
+
+  // Create Event Handler
   const handleCreateEventSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     createEvent({
@@ -122,11 +177,72 @@ export default function DashboardPage() {
     setNewDescription('')
   }
 
-  const handleCheckInSubmit = (e: React.FormEvent) => {
+  const handleMarkAttendanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!scanCode.trim()) return
-    const result = checkInByCode(scanCode)
-    setScanResult(result)
+    const code = scanCode.trim().toUpperCase()
+    if (!code) return
+
+    setIsVerifying(true)
+    setScanResult(null)
+
+    try {
+      const res = await verifyAttendanceApi(code)
+      setScanResult({
+        status: 'success',
+        already: res.already_verified,
+        registration: res.registration,
+        message: res.message,
+      })
+
+      // Update local roster list immediately
+      setRosterData((prev) =>
+        prev.map((item) =>
+          item.ticket_id.toUpperCase() === code || item.code.toUpperCase() === code
+            ? { ...item, attendance_verified: true }
+            : item,
+        ),
+      )
+
+      // Also update store if this ticket exists in registrations
+      checkInByCode(code)
+      setScanCode('')
+      loadRoster(selectedEventIdFilter)
+    } catch (err: any) {
+      // Offline fallback: try local store check in
+      const storeRes = checkInByCode(code)
+      if (storeRes.status === 'success') {
+        setScanResult({
+          status: 'success',
+          registration: {
+            ticket_id: storeRes.registration.code,
+            student_name: storeRes.registration.name,
+            rollNumber: storeRes.registration.rollNumber,
+            event_title: storeRes.event.title,
+          },
+          message: 'Attendance verified successfully!',
+        })
+        loadRoster(selectedEventIdFilter)
+        setScanCode('')
+      } else if (storeRes.status === 'already') {
+        setScanResult({
+          status: 'already',
+          registration: {
+            ticket_id: storeRes.registration.code,
+            student_name: storeRes.registration.name,
+            rollNumber: storeRes.registration.rollNumber,
+            event_title: storeRes.event.title,
+          },
+          message: 'Attendee was already marked present.',
+        })
+      } else {
+        setScanResult({
+          status: 'not-found',
+          message: err.message || `Ticket '${code}' not found in database.`,
+        })
+      }
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   const handleAddAnnouncementSubmit = (e: React.FormEvent) => {
@@ -144,24 +260,27 @@ export default function DashboardPage() {
   }
 
   // Calculated Stats
-  const totalRegistrations = registrations.length
-  const checkedInCount = registrations.filter((r) => r.checkedIn).length
+  const totalRegistrations = rosterData.length || registrations.length
+  const checkedInCount =
+    rosterData.filter((r) => r.attendance_verified).length ||
+    registrations.filter((r) => r.checkedIn).length
   const totalRevenue = registrations.reduce((acc, r) => {
     const ev = events.find((e) => e.id === r.eventId)
     return acc + (ev ? ev.fee : 0)
   }, 0)
 
   // Filtered Roster
-  const filteredRoster = registrations.filter((r) => {
-    const matchesEvent = selectedEventIdFilter === 'all' || r.eventId === selectedEventIdFilter
+  const filteredRoster = rosterData.filter((r) => {
     const q = rosterSearch.trim().toLowerCase()
-    const matchesQuery =
+    return (
       !q ||
-      r.name.toLowerCase().includes(q) ||
-      r.email.toLowerCase().includes(q) ||
-      r.rollNumber.toLowerCase().includes(q) ||
-      r.code.toLowerCase().includes(q)
-    return matchesEvent && matchesQuery
+      (r.student_name && r.student_name.toLowerCase().includes(q)) ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
+      (r.email && r.email.toLowerCase().includes(q)) ||
+      (r.rollNumber && r.rollNumber.toLowerCase().includes(q)) ||
+      (r.ticket_id && r.ticket_id.toLowerCase().includes(q)) ||
+      (r.code && r.code.toLowerCase().includes(q))
+    )
   })
 
   return (
@@ -456,26 +575,41 @@ export default function DashboardPage() {
 
             {/* TAB 2: QR SCANNER & MANUAL CODE CHECK-IN */}
             <TabsContent value="scanner" className="space-y-4">
-              <Card className="rounded-3xl border max-w-xl mx-auto">
+              <Card className="rounded-3xl border max-w-xl mx-auto shadow-sm">
                 <CardHeader className="text-center pb-2">
                   <div className="size-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center mb-2">
                     <QrCode className="size-7" />
                   </div>
-                  <CardTitle className="text-xl font-bold">Fast Ticket Scanner & Code Verification</CardTitle>
+                  <CardTitle className="text-xl font-bold">QR Scanner & Check-in</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Enter student pass code (e.g. <span className="font-mono text-primary">SIT-XXXXXX</span>) to verify check-in instantly.
+                    Enter the participant's <span className="font-mono text-primary font-semibold">Ticket ID</span> (e.g. SIT-A89F2K) to verify attendance.
                   </p>
                 </CardHeader>
                 <CardContent className="p-6 pt-2 space-y-4">
-                  <form onSubmit={handleCheckInSubmit} className="flex gap-2">
+                  <form onSubmit={handleMarkAttendanceSubmit} className="flex gap-2">
                     <Input
                       value={scanCode}
                       onChange={(e) => setScanCode(e.target.value)}
-                      placeholder="e.g. SIT-A89F2K"
+                      placeholder="Enter Ticket ID (e.g. SIT-A89F2K)"
                       className="font-mono uppercase text-sm h-11"
+                      required
                     />
-                    <Button type="submit" className="h-11 px-6 font-semibold rounded-xl shrink-0">
-                      Check In Attendee
+                    <Button
+                      type="submit"
+                      disabled={isVerifying}
+                      className="h-11 px-6 font-semibold rounded-xl shrink-0 gap-2"
+                    >
+                      {isVerifying ? (
+                        <>
+                          <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Marking...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="size-4" />
+                          Mark Attendance
+                        </>
+                      )}
                     </Button>
                   </form>
 
@@ -491,11 +625,14 @@ export default function DashboardPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5 font-bold text-sm text-emerald-700 dark:text-emerald-400">
                             <CheckCircle2 className="size-4" />
-                            CHECK-IN SUCCESSFUL!
+                            ATTENDANCE VERIFIED!
                           </div>
-                          <p>Attendee: <strong>{scanResult.registration.name}</strong> ({scanResult.registration.rollNumber})</p>
-                          <p>Event: <strong>{scanResult.event.title}</strong></p>
-                          <p>Code: <span className="font-mono font-bold">{scanResult.registration.code}</span></p>
+                          <p>Student Name: <strong>{scanResult.registration.student_name || scanResult.registration.name}</strong></p>
+                          <p>Roll Number: <strong>{scanResult.registration.rollNumber || 'N/A'}</strong></p>
+                          <p>Ticket ID: <span className="font-mono font-bold">{scanResult.registration.ticket_id || scanResult.registration.code}</span></p>
+                          {scanResult.registration.event_title && (
+                            <p>Event: <strong>{scanResult.registration.event_title}</strong></p>
+                          )}
                         </div>
                       )}
 
@@ -505,14 +642,14 @@ export default function DashboardPage() {
                             <AlertTriangle className="size-4" />
                             ALREADY CHECKED IN
                           </div>
-                          <p>Attendee: <strong>{scanResult.registration.name}</strong> was previously checked in.</p>
+                          <p>Attendee: <strong>{scanResult.registration.student_name || scanResult.registration.name}</strong> was previously verified.</p>
                         </div>
                       )}
 
                       {scanResult.status === 'not-found' && (
                         <div className="flex items-center gap-1.5 font-bold text-sm text-rose-700 dark:text-rose-400">
                           <AlertTriangle className="size-4" />
-                          INVALID TICKET CODE (Not found in database)
+                          {scanResult.message || 'Ticket ID not found in database.'}
                         </div>
                       )}
                     </div>
@@ -523,97 +660,114 @@ export default function DashboardPage() {
 
             {/* TAB 3: PARTICIPANT ROSTER & ATTENDANCE */}
             <TabsContent value="roster" className="space-y-4">
-              <Card className="rounded-3xl border">
+              <Card className="rounded-3xl border shadow-sm">
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 pb-3">
                   <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
                     <Input
                       value={rosterSearch}
                       onChange={(e) => setRosterSearch(e.target.value)}
-                      placeholder="Search participant, roll # or ticket code..."
+                      placeholder="Search student name, roll # or ticket ID..."
                       className="pl-9 h-10 text-xs"
                     />
                   </div>
 
-                  <Select
-                    items={[
-                      { value: 'all', label: 'All Events' },
-                      ...events.map((e) => ({ value: e.id, label: e.title })),
-                    ]}
-                    value={selectedEventIdFilter}
-                    onValueChange={(val) => setSelectedEventIdFilter(val || 'all')}
-                  >
-                    <SelectTrigger className="h-10 text-xs min-w-44">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="all">All Events</SelectItem>
-                        {events.map((e) => (
-                          <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-3">
+                    <Select
+                      items={[
+                        { value: 'all', label: 'All Events' },
+                        ...events.map((e) => ({ value: e.id, label: e.title })),
+                      ]}
+                      value={selectedEventIdFilter}
+                      onValueChange={(val) => setSelectedEventIdFilter(val || 'all')}
+                    >
+                      <SelectTrigger className="h-10 text-xs min-w-44">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="all">All Events</SelectItem>
+                          {events.map((e) => (
+                            <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => loadRoster(selectedEventIdFilter)}
+                      className="h-10 text-xs gap-1.5"
+                    >
+                      <RefreshCw className={cn("size-3.5", isLoadingRoster && "animate-spin")} />
+                      Refresh
+                    </Button>
+                  </div>
                 </CardHeader>
 
                 <CardContent className="p-0 overflow-x-auto">
                   <table className="w-full text-left text-xs border-t">
                     <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-semibold">
                       <tr>
-                        <th className="p-3">Ticket Code</th>
-                        <th className="p-3">Participant</th>
+                        <th className="p-3">Student Name</th>
                         <th className="p-3">Roll Number</th>
-                        <th className="p-3">Event</th>
-                        <th className="p-3">Check-In Status</th>
-                        <th className="p-3">Payment</th>
-                        <th className="p-3 text-right">Actions</th>
+                        <th className="p-3">Ticket ID</th>
+                        <th className="p-3">Attendance Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {filteredRoster.map((r) => {
-                        const ev = events.find((e) => e.id === r.eventId)
-                        return (
-                          <tr key={r.id} className="hover:bg-muted/40 transition-colors">
-                            <td className="p-3 font-mono font-bold text-primary">{r.code}</td>
-                            <td className="p-3">
-                              <div className="font-semibold text-foreground">{r.name}</div>
-                              <div className="text-[10px] text-muted-foreground">{r.email}</div>
-                            </td>
-                            <td className="p-3">{r.rollNumber}</td>
-                            <td className="p-3 max-w-40 truncate">{ev?.title || 'Unknown Event'}</td>
-                            <td className="p-3">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setCheckedIn(r.id, !r.checkedIn)}
-                                className={cn(
-                                  'h-7 px-2.5 text-[11px] rounded-lg font-medium',
-                                  r.checkedIn ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-muted text-muted-foreground'
+                      {filteredRoster.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="p-8 text-center text-muted-foreground text-xs">
+                            {isLoadingRoster ? 'Loading participant roster...' : 'No participant registrations found.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredRoster.map((r) => {
+                          const ticketId = r.ticket_id || r.code
+                          return (
+                            <tr key={r.id || ticketId} className="hover:bg-muted/40 transition-colors">
+                              <td className="p-3">
+                                <div className="font-semibold text-foreground">{r.student_name || r.name}</div>
+                                <div className="text-[10px] text-muted-foreground">{r.email}</div>
+                              </td>
+                              <td className="p-3 font-mono font-medium">{r.rollNumber || 'N/A'}</td>
+                              <td className="p-3 font-mono font-bold text-primary">{ticketId}</td>
+                              <td className="p-3">
+                                {r.attendance_verified ? (
+                                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold gap-1">
+                                    <CheckCircle2 className="size-3" />
+                                    Checked-In
+                                  </Badge>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 font-semibold gap-1">
+                                      <Clock className="size-3" />
+                                      Pending
+                                    </Badge>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={async () => {
+                                        try {
+                                          await verifyAttendanceApi(ticketId)
+                                          loadRoster(selectedEventIdFilter)
+                                        } catch {
+                                          setCheckedIn(String(r.id), true)
+                                        }
+                                      }}
+                                      className="h-6 text-[10px] px-2 text-primary hover:bg-primary/10"
+                                    >
+                                      Mark Present
+                                    </Button>
+                                  </div>
                                 )}
-                              >
-                                {r.checkedIn ? 'Checked In' : 'Mark Present'}
-                              </Button>
-                            </td>
-                            <td className="p-3">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => togglePaid(r.id)}
-                                className={cn(
-                                  'h-7 px-2.5 text-[11px] rounded-lg font-medium',
-                                  r.paid ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                                )}
-                              >
-                                {r.paid ? 'Paid' : 'Unpaid'}
-                              </Button>
-                            </td>
-                            <td className="p-3 text-right">
-                              <Badge variant="outline" className="text-[10px] capitalize">{r.department}</Badge>
-                            </td>
-                          </tr>
-                        )
-                      })}
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
                     </tbody>
                   </table>
                 </CardContent>

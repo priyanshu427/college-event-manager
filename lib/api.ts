@@ -77,7 +77,7 @@ export async function registerApi(data: {
   role?: string
   deptCode?: string
   securityKey?: string
-}): Promise<{ status: string; message: string; user: any }> {
+}): Promise<{ status: string; message: string; user: any; token?: string }> {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -95,7 +95,7 @@ export async function loginApi(data: {
   role?: string
   deptCode?: string
   securityKey?: string
-}): Promise<{ status: string; message: string; user: any }> {
+}): Promise<{ status: string; message: string; user: any; token?: string }> {
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -106,3 +106,62 @@ export async function loginApi(data: {
   }
   return res.json()
 }
+
+export async function registerForEventApi(
+  eventId: string,
+  token: string,
+): Promise<{ status: string; message: string; ticket_id: string; registration: any }> {
+  const res = await fetch(`${API_BASE_URL}/events/${eventId}/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Registration failed: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function verifyAttendanceApi(
+  ticketId: string,
+): Promise<{ status: string; message: string; already_verified?: boolean; registration: any }> {
+  const res = await fetch(`${API_BASE_URL}/attendance/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ticket_id: ticketId }),
+  })
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Attendance verification failed: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function fetchEventRosterApi(
+  eventId: string = 'all',
+): Promise<Array<{
+  id: number | string
+  ticket_id: string
+  code: string
+  event_id: string
+  event_title?: string
+  user_id: string
+  student_name: string
+  name: string
+  rollNumber: string
+  email: string
+  department?: string
+  attendance_verified: boolean
+}>> {
+  const res = await fetch(`${API_BASE_URL}/organizer/events/${eventId}/roster`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch roster: ${res.statusText}`)
+  }
+  return res.json()
+}
+

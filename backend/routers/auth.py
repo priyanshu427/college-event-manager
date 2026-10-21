@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend import models
+from backend.auth_utils import create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -32,6 +33,7 @@ class AuthResponse(BaseModel):
     status: str
     message: str
     user: Dict[str, Any]
+    token: Optional[str] = None
 
 @router.post("/register", response_model=AuthResponse)
 def register_user(req: RegisterRequest, db: Session = Depends(get_db)):
@@ -53,10 +55,12 @@ def register_user(req: RegisterRequest, db: Session = Depends(get_db)):
             "rollNumber": existing_user.rollNumber or roll_number,
             "department": existing_user.department or "Campus Member",
         }
+        token = create_access_token(existing_user.id, existing_user.role)
         return AuthResponse(
             status="success",
             message="User already registered. Logged in successfully!",
-            user=user_dict
+            user=user_dict,
+            token=token,
         )
 
     pwd_hash = hash_password(req.password or "demo1234")
@@ -85,10 +89,12 @@ def register_user(req: RegisterRequest, db: Session = Depends(get_db)):
         "department": new_user.department,
     }
 
+    token = create_access_token(new_user.id, new_user.role)
     return AuthResponse(
         status="success",
         message="Account created successfully in MySQL!",
-        user=user_dict
+        user=user_dict,
+        token=token,
     )
 
 @router.post("/login", response_model=AuthResponse)
@@ -127,8 +133,11 @@ def login_user(req: LoginRequest, db: Session = Depends(get_db)):
         "department": db_user.department or "Sunrise Institute of Technology",
     }
 
+    token = create_access_token(db_user.id, db_user.role)
     return AuthResponse(
         status="success",
         message="Logged in successfully via MySQL!",
-        user=user_dict
+        user=user_dict,
+        token=token,
     )
+

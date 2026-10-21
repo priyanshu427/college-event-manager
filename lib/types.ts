@@ -64,6 +64,8 @@ export type Announcement = {
 export type Role = 'student' | 'organizer' | 'admin'
 
 export type CurrentUser = {
+  id?: string
+  token?: string
   name: string
   email: string
   college: string
@@ -73,4 +75,5 @@ export type CurrentUser = {
   phone: string
   role?: Role
 }
+
 

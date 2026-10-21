@@ -48,8 +48,14 @@ type StoreValue = {
   setRole: (role: Role) => void
   user: CurrentUser
   setUser: (user: CurrentUser) => void
+  token: string
+  setToken: (token: string) => void
   isLoggedIn: boolean
-  loginAsRole: (targetRole: Role, customUser?: Partial<CurrentUser>) => void
+  loginAsRole: (
+    targetRole: Role,
+    customUser?: Partial<CurrentUser>,
+    token?: string,
+  ) => void
   logout: () => void
   events: EventItem[]
   registrations: Registration[]
@@ -62,6 +68,7 @@ type StoreValue = {
   updateEvent: (id: string, patch: Partial<EventItem>) => void
   deleteEvent: (id: string) => void
   register: (input: NewRegistrationInput) => Registration
+  addRegistration: (reg: Registration) => void
   cancelRegistration: (id: string) => void
   checkInByCode: (code: string) => CheckInResult
   setCheckedIn: (id: string, checkedIn: boolean) => void
@@ -82,6 +89,7 @@ const STORAGE_KEY_ANNOUNCEMENTS = 'sit_campus_pulse_announcements'
 const STORAGE_KEY_USER = 'sit_campus_pulse_user'
 const STORAGE_KEY_ROLE = 'sit_campus_pulse_role'
 const STORAGE_KEY_LOGGED_IN = 'sit_campus_pulse_logged_in'
+const STORAGE_KEY_TOKEN = 'sit_campus_pulse_token'
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -100,6 +108,13 @@ function newId(prefix: string) {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<Role>('student')
   const [user, setUserState] = useState<CurrentUser>(defaultCurrentUser)
+  const [token, setTokenState] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_TOKEN) || 'usr-student-aarav'
+    } catch {
+      return 'usr-student-aarav'
+    }
+  })
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [events, setEvents] = useState<EventItem[]>(seedEvents)
   const [registrations, setRegistrations] = useState<Registration[]>(() => [
@@ -127,6 +142,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       const storedUser = localStorage.getItem(STORAGE_KEY_USER)
       if (storedUser) setUserState(JSON.parse(storedUser))
+
+      const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN)
+      if (storedToken) setTokenState(storedToken)
 
       const storedLoggedIn = localStorage.getItem(STORAGE_KEY_LOGGED_IN)
       if (storedLoggedIn === 'true') setIsLoggedIn(true)
@@ -191,18 +209,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const setToken = useCallback((newToken: string) => {
+    setTokenState(newToken)
+    try {
+      localStorage.setItem(STORAGE_KEY_TOKEN, newToken)
+    } catch (e) { }
+  }, [])
+
   const loginAsRole = useCallback(
-    (targetRole: Role, customUser?: Partial<CurrentUser>) => {
+    (targetRole: Role, customUser?: Partial<CurrentUser>, authToken?: string) => {
       setRoleState(targetRole)
       const baseUser = demoUsers[targetRole] || defaultCurrentUser
-      setUserState({
+      const updatedUser = {
         ...baseUser,
         ...customUser,
         role: targetRole,
-      })
+      }
+      setUserState(updatedUser)
       setIsLoggedIn(true)
+      const effectiveToken =
+        authToken ||
+        customUser?.token ||
+        customUser?.id ||
+        updatedUser.id ||
+        'usr-student-aarav'
+      setTokenState(effectiveToken)
       try {
         localStorage.setItem(STORAGE_KEY_LOGGED_IN, 'true')
+        localStorage.setItem(STORAGE_KEY_TOKEN, effectiveToken)
       } catch (e) { }
     },
     [],
@@ -212,6 +246,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false)
     try {
       localStorage.removeItem(STORAGE_KEY_LOGGED_IN)
+      localStorage.removeItem(STORAGE_KEY_TOKEN)
     } catch (e) { }
   }, [])
 
@@ -306,6 +341,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return created
   }, [])
 
+  const addRegistration = useCallback((reg: Registration) => {
+    setRegistrations((prev) => {
+      const idx = prev.findIndex(
+        (r) =>
+          r.id === reg.id ||
+          r.code === reg.code ||
+          (r.eventId === reg.eventId && r.email === reg.email),
+      )
+      if (idx >= 0) {
+        const copy = [...prev]
+        copy[idx] = { ...copy[idx], ...reg }
+        return copy
+      }
+      return [reg, ...prev]
+    })
+  }, [])
+
   const cancelRegistration = useCallback((id: string) => {
     setRegistrations((prev) => prev.filter((r) => r.id !== id))
   }, [])
@@ -384,6 +436,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setRole,
       user,
       setUser,
+      token,
+      setToken,
       isLoggedIn,
       loginAsRole,
       logout,
@@ -398,6 +452,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateEvent,
       deleteEvent,
       register,
+      addRegistration,
       cancelRegistration,
       checkInByCode,
       setCheckedIn,
@@ -412,6 +467,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setRole,
       user,
       setUser,
+      token,
+      setToken,
       isLoggedIn,
       loginAsRole,
       logout,
@@ -426,6 +483,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateEvent,
       deleteEvent,
       register,
+      addRegistration,
       cancelRegistration,
       checkInByCode,
       setCheckedIn,
@@ -436,6 +494,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       resetDatabase,
     ],
   )
+
 
 
 

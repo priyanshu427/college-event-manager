@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.database import engine, Base
-from backend.routers import events, auth
+from backend.routers import events, auth, attendance, organizer
 from backend import models
 
 # Automatically create all database tables on startup
@@ -30,6 +30,9 @@ app.add_middleware(
 # Include routers
 app.include_router(events.router)
 app.include_router(auth.router)
+app.include_router(attendance.router)
+app.include_router(organizer.router)
+
 
 
 @app.get("/")

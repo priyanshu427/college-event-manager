@@ -10,6 +10,7 @@ import type {
 export const COLLEGE_NAME = 'IMS Engineering College'
 
 export const currentUser: CurrentUser = {
+  id: 'usr-student-aarav',
   name: 'Aarav Menon',
   email: 'aarav.menon@sit.edu.in',
   college: COLLEGE_NAME,
@@ -22,6 +23,7 @@ export const currentUser: CurrentUser = {
 
 export const demoUsers: Record<Role, CurrentUser> = {
   student: {
+    id: 'usr-student-aarav',
     name: 'Aarav Menon',
     email: 'aarav.menon@sit.edu.in',
     college: COLLEGE_NAME,
@@ -32,6 +34,7 @@ export const demoUsers: Record<Role, CurrentUser> = {
     role: 'student',
   },
   organizer: {
+    id: 'usr-organizer-meera',
     name: 'Prof. Meera Sharma',
     email: 'meera.organizer@sit.edu.in',
     college: COLLEGE_NAME,
@@ -42,6 +45,7 @@ export const demoUsers: Record<Role, CurrentUser> = {
     role: 'organizer',
   },
   admin: {
+    id: 'usr-admin-rajesh',
     name: 'Dr. Rajesh Varma',
     email: 'admin.dean@sit.edu.in',
     college: COLLEGE_NAME,

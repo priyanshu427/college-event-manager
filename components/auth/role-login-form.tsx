@@ -116,7 +116,7 @@ export function RoleLoginForm({
           deptCode: secondaryField,
           securityKey: secondaryField,
         })
-        loginAsRole(activeRole, res.user)
+        loginAsRole(activeRole, res.user, res.token)
         setLoginSuccess(true)
         setTimeout(() => {
           const dest =
@@ -157,7 +157,7 @@ export function RoleLoginForm({
           deptCode: secondaryField,
           securityKey: secondaryField,
         })
-        loginAsRole(activeRole, res.user)
+        loginAsRole(activeRole, res.user, res.token)
         setLoginSuccess(true)
         setTimeout(() => {
           const dest =

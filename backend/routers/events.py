@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend import models
+from backend.auth_utils import get_current_user_id
 
 router = APIRouter(prefix="/api/events", tags=["events"])
 
@@ -389,3 +390,107 @@ def reset_events(db: Session = Depends(get_db)):
     seed_database_events(db)
     events = db.query(models.Event).all()
     return [db_event_to_dict(e) for e in events]
+
+
+@router.post("/{event_id}/register")
+def register_for_event(
+    event_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    seed_database_events(db)
+
+    # 1. Find event
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id '{event_id}' not found",
+        )
+
+    # 2. Ensure user exists in database to satisfy foreign key constraint
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        user = db.query(models.User).filter(models.User.email == user_id).first()
+    if not user:
+        name_candidate = (
+            user_id.split("@")[0].replace(".", " ").title()
+            if "@" in user_id
+            else f"Student {user_id[-4:]}"
+        )
+        user = models.User(
+            id=user_id,
+            name=name_candidate,
+            email=user_id if "@" in user_id else f"{user_id}@sit.edu.in",
+            password_hash="demo1234",
+            role="student",
+            rollNumber=user_id.upper(),
+            department="Sunrise Institute of Technology",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # 3. Check for existing registration
+    existing_reg = (
+        db.query(models.Registration)
+        .filter(
+            models.Registration.event_id == event_id,
+            models.Registration.user_id == user.id,
+        )
+        .first()
+    )
+    if existing_reg:
+        return {
+            "status": "success",
+            "message": "Already registered for this event",
+            "ticket_id": existing_reg.ticket_id,
+            "registration": {
+                "id": str(existing_reg.id),
+                "ticket_id": existing_reg.ticket_id,
+                "code": existing_reg.ticket_id,
+                "event_id": existing_reg.event_id,
+                "eventId": existing_reg.event_id,
+                "user_id": existing_reg.user_id,
+                "student_name": user.name,
+                "name": user.name,
+                "rollNumber": user.rollNumber,
+                "email": user.email,
+                "attendance_verified": existing_reg.attendance_verified,
+                "checkedIn": existing_reg.attendance_verified,
+            },
+        }
+
+    # 4. Generate unique ticket_id and insert new Registration
+    ticket_id = f"SIT-{uuid.uuid4().hex[:6].upper()}"
+
+    new_reg = models.Registration(
+        user_id=user.id,
+        event_id=event.id,
+        ticket_id=ticket_id,
+        attendance_verified=False,
+    )
+    db.add(new_reg)
+    db.commit()
+    db.refresh(new_reg)
+
+    return {
+        "status": "success",
+        "message": "1-Click Registration successful!",
+        "ticket_id": new_reg.ticket_id,
+        "registration": {
+            "id": str(new_reg.id),
+            "ticket_id": new_reg.ticket_id,
+            "code": new_reg.ticket_id,
+            "event_id": new_reg.event_id,
+            "eventId": new_reg.event_id,
+            "user_id": new_reg.user_id,
+            "student_name": user.name,
+            "name": user.name,
+            "rollNumber": user.rollNumber,
+            "email": user.email,
+            "attendance_verified": new_reg.attendance_verified,
+            "checkedIn": new_reg.attendance_verified,
+        },
+    }
+

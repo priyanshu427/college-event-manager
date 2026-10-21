@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from backend.database import Base
 
 class User(Base):
@@ -36,3 +37,17 @@ class Event(Base):
     image = Column(String(500), nullable=True)
     tags = Column(Text, nullable=True)  # Store comma-separated string
     created_by = Column(String(255), nullable=True)
+
+
+class Registration(Base):
+    __tablename__ = "registrations"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(String(64), ForeignKey("users.id"), nullable=False, index=True)
+    event_id = Column(String(64), ForeignKey("events.id"), nullable=False, index=True)
+    ticket_id = Column(String(64), unique=True, index=True, nullable=False)
+    attendance_verified = Column(Boolean, default=False, nullable=False)
+
+    user = relationship("User", backref="registrations")
+    event = relationship("Event", backref="registrations")
+
