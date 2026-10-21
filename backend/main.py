@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from backend.database import engine, Base
 from backend.routers import events, auth, attendance, organizer
 from backend import models
@@ -12,6 +14,11 @@ app = FastAPI(
     version="1.0.0",
     description="Standalone FastAPI backend with MySQL & SQLAlchemy ORM",
 )
+
+# Ensure uploads static directory exists
+STATIC_UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "uploads")
+os.makedirs(STATIC_UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=STATIC_UPLOAD_DIR), name="uploads")
 
 # CORS middleware configuration
 origins = [

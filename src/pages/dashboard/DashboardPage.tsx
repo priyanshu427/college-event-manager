@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -9,15 +9,23 @@ import {
   Trash2,
   Search,
   RefreshCw,
-  Shield,
   Calendar,
   DollarSign,
   AlertTriangle,
   Clock,
+  Zap,
+  Upload,
+  ArrowRight,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
-import { fetchEventRosterApi, verifyAttendanceApi } from '@/lib/api'
-import type { EventCategory } from '@/lib/types'
+import {
+  fetchEventRosterApi,
+  verifyAttendanceApi,
+  fetchOrganizerEventsApi,
+  createEventApi,
+  deleteEventApi,
+} from '@/lib/api'
+import type { EventCategory, EventItem } from '@/lib/types'
 import { EVENT_CATEGORIES, formatFee } from '@/lib/format'
 import { SiteHeader } from '@/components/site-header'
 import { SiteFooter } from '@/components/site-footer'
@@ -49,24 +57,27 @@ export default function DashboardPage() {
   const {
     role,
     user,
-    events,
-    registrations,
-    announcements,
-    createEvent,
-    deleteEvent,
+    token,
+    deleteEvent: storeDeleteEvent,
+    refreshEvents: storeRefreshEvents,
     checkInByCode,
     setCheckedIn,
-    togglePaid,
-    addAnnouncement,
-    deleteAnnouncement,
-    resetDatabase,
   } = useStore()
 
-  // Tabs state
-  const [activeTab, setActiveTab] = useState('events')
+  // Effective token ensuring organizer role if currently viewed under organizer portal
+  const effectiveToken =
+    token || (role === 'organizer' ? 'usr-organizer-meera' : 'usr-student-aarav')
+
+  // Tabs state: ONLY 'events', 'scanner', and 'roster' (announcements & admin removed)
+  const [activeTab, setActiveTab] = useState<'events' | 'scanner' | 'roster'>('events')
+
+  // Live Events state directly from MySQL database
+  const [eventsList, setEventsList] = useState<EventItem[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false)
 
   // Create Event Modal state
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newTagline, setNewTagline] = useState('')
   const [newCategory, setNewCategory] = useState<EventCategory>('Technical')
@@ -75,44 +86,63 @@ export default function DashboardPage() {
   const [newEndTime, setNewEndTime] = useState('16:00')
   const [newVenue, setNewVenue] = useState('Main Auditorium')
   const [newDepartment, setNewDepartment] = useState('Computer Science')
-  const [newOrganizer, setNewOrganizer] = useState('Tech Council')
   const [newCapacity, setNewCapacity] = useState('150')
   const [newFee, setNewFee] = useState('0')
-  const [newTeamEvent, setNewTeamEvent] = useState(false)
   const [newDescription, setNewDescription] = useState('')
-  const [newImage, setNewImage] = useState('/events/tech-fest.png')
+  const [newImageFile, setNewImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   // Scanner Check In State
   const [scanCode, setScanCode] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
-  const [scanResult, setScanResult] = useState<any>(null)
+  const [scanResult, setScanResult] = useState<{
+    status: 'success' | 'already' | 'not-found' | 'forbidden'
+    registration?: any
+    message?: string
+    already?: boolean
+  } | null>(null)
+
+  // Auto-scanner debounce ref to avoid duplicate rapid triggers
+  const lastScannedCodeRef = useRef<string>('')
+  const autoScanDebounceTimerRef = useRef<any>(null)
 
   // Roster State
-  const [rosterData, setRosterData] = useState<Array<{
-    id: number | string
-    ticket_id: string
-    code: string
-    event_id: string
-    event_title?: string
-    user_id: string
-    student_name: string
-    name: string
-    rollNumber: string
-    email: string
-    department?: string
-    attendance_verified: boolean
-  }>>([])
+  const [rosterData, setRosterData] = useState<
+    Array<{
+      id: number | string
+      ticket_id: string
+      code: string
+      event_id: string
+      event_title?: string
+      user_id: string
+      student_name: string
+      name: string
+      rollNumber: string
+      email: string
+      department?: string
+      attendance_verified: boolean
+    }>
+  >([])
   const [isLoadingRoster, setIsLoadingRoster] = useState(false)
   const [rosterSearch, setRosterSearch] = useState('')
   const [selectedEventIdFilter, setSelectedEventIdFilter] = useState('all')
 
-  // Announcement Form State
-  const [annTitle, setAnnTitle] = useState('')
-  const [annMessage, setAnnMessage] = useState('')
-  const [annEventId, setAnnEventId] = useState('all')
-  const [annPriority, setAnnPriority] = useState<'normal' | 'urgent'>('normal')
+  // Load live events directly from MySQL API
+  const loadEvents = async () => {
+    setIsLoadingEvents(true)
+    try {
+      const data = await fetchOrganizerEventsApi()
+      if (Array.isArray(data)) {
+        setEventsList(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch live events from API:', err)
+    } finally {
+      setIsLoadingEvents(false)
+    }
+  }
 
-
+  // Load participant roster directly from API
   const loadRoster = async (eventId: string = selectedEventIdFilter) => {
     setIsLoadingRoster(true)
     try {
@@ -121,72 +151,95 @@ export default function DashboardPage() {
         setRosterData(data)
       }
     } catch (err) {
-      console.warn('Could not fetch roster from API, falling back to store:', err)
-      // Fallback from store registrations
-      const mapped = registrations
-        .filter((r) => eventId === 'all' || r.eventId === eventId)
-        .map((r) => ({
-          id: r.id,
-          ticket_id: r.code,
-          code: r.code,
-          event_id: r.eventId,
-          event_title: events.find((e) => e.id === r.eventId)?.title || 'Campus Event',
-          user_id: r.id,
-          student_name: r.name,
-          name: r.name,
-          rollNumber: r.rollNumber,
-          email: r.email,
-          department: r.department,
-          attendance_verified: r.checkedIn,
-        }))
-      setRosterData(mapped)
+      console.warn('Could not fetch roster from API:', err)
     } finally {
       setIsLoadingRoster(false)
     }
   }
 
   useEffect(() => {
+    loadEvents()
+  }, [])
+
+  useEffect(() => {
     loadRoster(selectedEventIdFilter)
-  }, [selectedEventIdFilter, registrations])
+  }, [selectedEventIdFilter])
 
-  // Create Event Handler
-  const handleCreateEventSubmit = (e: React.FormEvent) => {
+  // Handle Create Event with multipart/form-data
+  const handleCreateEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    createEvent({
-      title: newTitle,
-      tagline: newTagline,
-      category: newCategory,
-      status: 'upcoming',
-      date: newDate,
-      startTime: newStartTime,
-      endTime: newEndTime,
-      venue: newVenue,
-      department: newDepartment,
-      organizer: newOrganizer,
-      capacity: parseInt(newCapacity) || 100,
-      fee: parseInt(newFee) || 0,
-      teamEvent: newTeamEvent,
-      image: newImage,
-      description: newDescription || 'Full campus event details.',
-      tags: ['Campus', newCategory],
-    })
+    setIsSubmittingEvent(true)
 
-    setCreateModalOpen(false)
-    setNewTitle('')
-    setNewTagline('')
-    setNewDescription('')
+    try {
+      const formData = new FormData()
+      formData.append('title', newTitle.trim())
+      formData.append('tagline', newTagline.trim())
+      formData.append('category', newCategory)
+      formData.append('date', newDate.trim())
+      formData.append('startTime', newStartTime.trim())
+      formData.append('endTime', newEndTime.trim())
+      formData.append('venue', newVenue.trim())
+      formData.append('department', newDepartment.trim())
+      formData.append('organizer', user.name || 'Campus Organizer')
+      formData.append('capacity', String(parseInt(newCapacity) || 100))
+      formData.append('fee', String(parseInt(newFee) || 0))
+      formData.append(
+        'description',
+        newDescription.trim() || 'Comprehensive campus event details and schedule.',
+      )
+
+      if (newImageFile) {
+        formData.append('image', newImageFile)
+      }
+
+      await createEventApi(formData, effectiveToken)
+
+      // Refresh live events and store
+      await loadEvents()
+      storeRefreshEvents?.()
+
+      // Reset form
+      setCreateModalOpen(false)
+      setNewTitle('')
+      setNewTagline('')
+      setNewDescription('')
+      setNewImageFile(null)
+      setImagePreview(null)
+    } catch (err: any) {
+      console.error('Error creating event:', err)
+      alert(err.message || 'Failed to publish event to database.')
+    } finally {
+      setIsSubmittingEvent(false)
+    }
   }
 
-  const handleMarkAttendanceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const code = scanCode.trim().toUpperCase()
+  // Handle Delete Event (Restricted to Organizer/Admin)
+  const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
+    if (!confirm(`Are you sure you want to permanently delete "${eventTitle}"? This will also remove associated attendee registrations.`)) {
+      return
+    }
+
+    try {
+      await deleteEventApi(eventId, effectiveToken)
+      storeDeleteEvent(eventId)
+      await loadEvents()
+      await loadRoster(selectedEventIdFilter)
+    } catch (err: any) {
+      console.error('Failed to delete event:', err)
+      alert(err.message || 'Failed to delete event. Organizer credentials required.')
+    }
+  }
+
+  // Core Attendance Verification Logic (Calls POST /api/attendance/verify with Organizer token)
+  const executeVerify = async (codeToVerify: string) => {
+    const code = codeToVerify.trim().toUpperCase()
     if (!code) return
 
     setIsVerifying(true)
     setScanResult(null)
 
     try {
-      const res = await verifyAttendanceApi(code)
+      const res = await verifyAttendanceApi(code, effectiveToken)
       setScanResult({
         status: 'success',
         already: res.already_verified,
@@ -203,70 +256,57 @@ export default function DashboardPage() {
         ),
       )
 
-      // Also update store if this ticket exists in registrations
       checkInByCode(code)
-      setScanCode('')
       loadRoster(selectedEventIdFilter)
+      lastScannedCodeRef.current = code
     } catch (err: any) {
-      // Offline fallback: try local store check in
-      const storeRes = checkInByCode(code)
-      if (storeRes.status === 'success') {
-        setScanResult({
-          status: 'success',
-          registration: {
-            ticket_id: storeRes.registration.code,
-            student_name: storeRes.registration.name,
-            rollNumber: storeRes.registration.rollNumber,
-            event_title: storeRes.event.title,
-          },
-          message: 'Attendance verified successfully!',
-        })
-        loadRoster(selectedEventIdFilter)
-        setScanCode('')
-      } else if (storeRes.status === 'already') {
-        setScanResult({
-          status: 'already',
-          registration: {
-            ticket_id: storeRes.registration.code,
-            student_name: storeRes.registration.name,
-            rollNumber: storeRes.registration.rollNumber,
-            event_title: storeRes.event.title,
-          },
-          message: 'Attendee was already marked present.',
-        })
-      } else {
-        setScanResult({
-          status: 'not-found',
-          message: err.message || `Ticket '${code}' not found in database.`,
-        })
-      }
+      console.warn('Verification error:', err)
+      const isForbidden =
+        err.message?.includes('403') ||
+        err.message?.toLowerCase().includes('forbidden') ||
+        err.message?.toLowerCase().includes('only organizers')
+
+      setScanResult({
+        status: isForbidden ? 'forbidden' : 'not-found',
+        message: err.message || `Ticket '${code}' not found in database.`,
+      })
     } finally {
       setIsVerifying(false)
     }
   }
 
-  const handleAddAnnouncementSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!annTitle.trim() || !annMessage.trim()) return
-    addAnnouncement({
-      eventId: annEventId,
-      title: annTitle,
-      message: annMessage,
-      priority: annPriority,
-    })
-    setAnnTitle('')
-    setAnnMessage('')
-    alert('Announcement posted to persistent database!')
+  // Auto-Scanner Logic: triggers POST /api/attendance/verify automatically when valid QR string recognized
+  const handleScanInputChange = (val: string) => {
+    setScanCode(val)
+    const cleaned = val.trim().toUpperCase()
+
+    // Clear any existing pending auto-scan timer
+    if (autoScanDebounceTimerRef.current) {
+      clearTimeout(autoScanDebounceTimerRef.current)
+    }
+
+    // Check if input matches valid ticket string format (e.g., SIT-4308AD, SIT-A89F2K)
+    const isTicketPattern = /^SIT-[A-Z0-9]{4,10}$/i.test(cleaned)
+
+    if (isTicketPattern && cleaned !== lastScannedCodeRef.current) {
+      // Auto-trigger API call immediately upon recognizing valid QR ticket string
+      autoScanDebounceTimerRef.current = setTimeout(() => {
+        executeVerify(cleaned)
+      }, 150)
+    }
   }
 
-  // Calculated Stats
-  const totalRegistrations = rosterData.length || registrations.length
-  const checkedInCount =
-    rosterData.filter((r) => r.attendance_verified).length ||
-    registrations.filter((r) => r.checkedIn).length
-  const totalRevenue = registrations.reduce((acc, r) => {
-    const ev = events.find((e) => e.id === r.eventId)
-    return acc + (ev ? ev.fee : 0)
+  const handleManualScanSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    executeVerify(scanCode)
+  }
+
+  // Metrics
+  const totalRegistrations = rosterData.length
+  const checkedInCount = rosterData.filter((r) => r.attendance_verified).length
+  const totalRevenue = eventsList.reduce((acc, ev) => {
+    const regs = rosterData.filter((r) => r.event_id === ev.id)
+    return acc + regs.length * (ev.fee || 0)
   }, 0)
 
   // Filtered Roster
@@ -282,6 +322,11 @@ export default function DashboardPage() {
       (r.code && r.code.toLowerCase().includes(q))
     )
   })
+
+  // Pending tickets for interactive quick-scan simulation
+  const pendingTickets = rosterData
+    .filter((r) => !r.attendance_verified)
+    .slice(0, 5)
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -300,11 +345,12 @@ export default function DashboardPage() {
                 Dashboard & Management Suite
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Logged in as <strong className="text-foreground">{user.name}</strong> ({role.toUpperCase()})
+                Logged in as <strong className="text-foreground">{user.name}</strong> ({role.toUpperCase()}) — Connected to live MySQL database
               </p>
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Create Campus Event Modal */}
               <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
                 <DialogTrigger render={
                   <Button className="rounded-xl font-semibold gap-2 shadow-sm">
@@ -312,48 +358,52 @@ export default function DashboardPage() {
                     Create New Event
                   </Button>
                 } />
-                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-slate-950/95 border border-slate-800 text-white shadow-2xl backdrop-blur-xl">
                   <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">Create Campus Event</DialogTitle>
+                    <DialogTitle className="text-xl font-bold text-white">Create Campus Event</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleCreateEventSubmit} className="space-y-4 pt-2">
                     <div className="space-y-1">
-                      <Label htmlFor="eventTitle" className="text-xs">Event Title</Label>
+                      <Label htmlFor="eventTitle" className="text-xs font-semibold text-slate-200">Event Title</Label>
                       <Input
                         id="eventTitle"
                         value={newTitle}
                         onChange={(e) => setNewTitle(e.target.value)}
                         placeholder="e.g. AI & Robotics Buildathon 2026"
+                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                         required
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="eventTagline" className="text-xs">Tagline</Label>
+                      <Label htmlFor="eventTagline" className="text-xs font-semibold text-slate-200">Tagline</Label>
                       <Input
                         id="eventTagline"
                         value={newTagline}
                         onChange={(e) => setNewTagline(e.target.value)}
                         placeholder="e.g. Build the future with autonomous AI agents"
+                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                         required
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs">Category</Label>
+                        <Label className="text-xs font-semibold text-slate-200">Category</Label>
                         <Select
                           items={EVENT_CATEGORIES.map((c) => ({ value: c, label: c }))}
                           value={newCategory}
                           onValueChange={(val) => setNewCategory(val as EventCategory)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="h-10 text-xs w-full bg-slate-900/60 border border-slate-700/80 text-white data-placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [&_svg]:text-white [&_svg]:opacity-100">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-slate-900 border border-slate-700 text-white shadow-2xl backdrop-blur-md">
                             <SelectGroup>
                               {EVENT_CATEGORIES.map((c) => (
-                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                <SelectItem key={c} value={c} className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">
+                                  {c}
+                                </SelectItem>
                               ))}
                             </SelectGroup>
                           </SelectContent>
@@ -361,12 +411,14 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="space-y-1">
-                        <Label htmlFor="eventDate" className="text-xs">Date</Label>
+                        <Label htmlFor="eventDate" className="text-xs font-semibold text-slate-200">Date</Label>
                         <Input
                           id="eventDate"
                           type="date"
                           value={newDate}
                           onChange={(e) => setNewDate(e.target.value)}
+                          style={{ colorScheme: 'dark' }}
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
                           required
                         />
                       </div>
@@ -374,22 +426,26 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="startTime" className="text-xs">Start Time</Label>
+                        <Label htmlFor="startTime" className="text-xs font-semibold text-slate-200">Start Time</Label>
                         <Input
                           id="startTime"
                           type="time"
                           value={newStartTime}
                           onChange={(e) => setNewStartTime(e.target.value)}
+                          style={{ colorScheme: 'dark' }}
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
                           required
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="endTime" className="text-xs">End Time</Label>
+                        <Label htmlFor="endTime" className="text-xs font-semibold text-slate-200">End Time</Label>
                         <Input
                           id="endTime"
                           type="time"
                           value={newEndTime}
                           onChange={(e) => setNewEndTime(e.target.value)}
+                          style={{ colorScheme: 'dark' }}
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
                           required
                         />
                       </div>
@@ -397,20 +453,24 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="venue" className="text-xs">Venue</Label>
+                        <Label htmlFor="venue" className="text-xs font-semibold text-slate-200">Venue</Label>
                         <Input
                           id="venue"
                           value={newVenue}
                           onChange={(e) => setNewVenue(e.target.value)}
+                          placeholder="e.g. Innovation Block, Lab 4"
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                           required
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="dept" className="text-xs">Department</Label>
+                        <Label htmlFor="dept" className="text-xs font-semibold text-slate-200">Department</Label>
                         <Input
                           id="dept"
                           value={newDepartment}
                           onChange={(e) => setNewDepartment(e.target.value)}
+                          placeholder="e.g. Computer Science"
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                           required
                         />
                       </div>
@@ -418,40 +478,86 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="capacity" className="text-xs">Max Capacity</Label>
+                        <Label htmlFor="capacity" className="text-xs font-semibold text-slate-200">Max Capacity</Label>
                         <Input
                           id="capacity"
                           type="number"
+                          min="1"
                           value={newCapacity}
                           onChange={(e) => setNewCapacity(e.target.value)}
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                           required
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label htmlFor="fee" className="text-xs">Registration Fee (Rs.)</Label>
+                        <Label htmlFor="fee" className="text-xs font-semibold text-slate-200">Registration Fee (Rs.)</Label>
                         <Input
                           id="fee"
                           type="number"
+                          min="0"
                           value={newFee}
                           onChange={(e) => setNewFee(e.target.value)}
+                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                           required
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="desc" className="text-xs">Description</Label>
+                      <Label htmlFor="desc" className="text-xs font-semibold text-slate-200">Description</Label>
                       <Textarea
                         id="desc"
                         rows={3}
                         value={newDescription}
                         onChange={(e) => setNewDescription(e.target.value)}
-                        placeholder="Detailed schedule and guidelines..."
+                        placeholder="Detailed schedule, rules, evaluation criteria, and guidelines..."
+                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 text-xs leading-relaxed"
                       />
                     </div>
 
-                    <Button type="submit" className="w-full h-11 font-semibold rounded-xl mt-2">
-                      Publish Event to Database
+                    {/* Image / Poster File Upload Input */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="eventImageFile" className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                        <Upload className="size-3.5 text-indigo-400" />
+                        Event Poster / Cover Image
+                      </Label>
+                      <Input
+                        id="eventImageFile"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            setNewImageFile(file)
+                            setImagePreview(URL.createObjectURL(file))
+                          }
+                        }}
+                        className="bg-slate-900/60 border border-slate-700/80 text-white file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/30 file:text-indigo-200 hover:file:bg-indigo-600/40 text-xs cursor-pointer focus:border-indigo-500"
+                      />
+                      {imagePreview && (
+                        <div className="mt-2 relative rounded-xl overflow-hidden aspect-[16/6] border border-slate-700 shadow-sm">
+                          <img
+                            src={imagePreview}
+                            alt="Selected Event Cover"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmittingEvent}
+                      className="w-full h-11 font-semibold rounded-xl mt-3 shadow-md gap-2 bg-indigo-600 hover:bg-indigo-500 text-white"
+                    >
+                      {isSubmittingEvent ? (
+                        <>
+                          <RefreshCw className="size-4 animate-spin" />
+                          Publishing to MySQL...
+                        </>
+                      ) : (
+                        'Publish Event to Database'
+                      )}
                     </Button>
                   </form>
                 </DialogContent>
@@ -464,8 +570,8 @@ export default function DashboardPage() {
             <Card className="rounded-2xl border bg-card">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Total Events</p>
-                  <h3 className="text-2xl font-bold text-foreground mt-1">{events.length}</h3>
+                  <p className="text-xs text-muted-foreground font-medium">Live Events (MySQL)</p>
+                  <h3 className="text-2xl font-bold text-foreground mt-1">{eventsList.length}</h3>
                 </div>
                 <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Calendar className="size-5" />
@@ -510,70 +616,106 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Main Dashboard Navigation Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-5 rounded-2xl bg-muted/80 p-1.5 border">
+          {/* Cleaned Dashboard Tabs: ONLY Event Directory, QR Scanner, Participant Roster */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+            <TabsList className="grid grid-cols-3 rounded-2xl bg-muted/80 p-1.5 border">
               <TabsTrigger value="events" className="rounded-xl text-xs font-semibold">
-                Event Directory ({events.length})
+                Event Directory ({eventsList.length})
               </TabsTrigger>
               <TabsTrigger value="scanner" className="rounded-xl text-xs font-semibold">
                 QR Scanner & Check-in
               </TabsTrigger>
               <TabsTrigger value="roster" className="rounded-xl text-xs font-semibold">
-                Participant Roster ({registrations.length})
-              </TabsTrigger>
-              <TabsTrigger value="announcements" className="rounded-xl text-xs font-semibold">
-                Announcements ({announcements.length})
-              </TabsTrigger>
-              <TabsTrigger value="admin" className="rounded-xl text-xs font-semibold">
-                System Governance
+                Participant Roster ({rosterData.length})
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB 1: EVENT DIRECTORY & MANAGEMENT */}
+            {/* TAB 1: LIVE EVENT DIRECTORY & MANAGEMENT */}
             <TabsContent value="events" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {events.map((event) => {
-                  const eventRegs = registrations.filter((r) => r.eventId === event.id)
-                  return (
-                    <Card key={event.id} className="overflow-hidden rounded-2xl border bg-card">
-                      <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-2">
-                        <div>
-                          <Badge variant="outline" className="text-[10px] mb-1">
-                            {event.category}
-                          </Badge>
-                          <CardTitle className="text-base font-bold leading-tight">{event.title}</CardTitle>
+              {isLoadingEvents ? (
+                <div className="p-12 text-center text-muted-foreground flex items-center justify-center gap-2">
+                  <RefreshCw className="size-4 animate-spin text-primary" />
+                  Loading live events from MySQL database...
+                </div>
+              ) : eventsList.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl border border-dashed bg-card/50 text-muted-foreground">
+                  No events found in the database. Click "Create New Event" above to publish one.
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {eventsList.map((event) => {
+                    const eventRegs = rosterData.filter((r) => r.event_id === event.id)
+                    const displayImage = event.image_url || event.image || '/events/tech-fest.png'
+
+                    return (
+                      <Card key={event.id} className="overflow-hidden rounded-2xl border bg-card hover:shadow-md transition-all">
+                        {/* Event Card Image */}
+                        <div className="relative aspect-[16/7.5] overflow-hidden bg-muted">
+                          <img
+                            src={displayImage}
+                            alt={event.title}
+                            onError={(e) => {
+                              ;(e.target as HTMLImageElement).src = '/events/tech-fest.png'
+                            }}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <Badge variant="outline" className="text-[10px] bg-background/90 backdrop-blur font-semibold">
+                              {event.category}
+                            </Badge>
+                          </div>
+                          <div className="absolute bottom-2 left-2">
+                            <Badge className="text-[10px] bg-black/60 backdrop-blur text-white font-medium">
+                              {event.date}
+                            </Badge>
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm(`Delete event "${event.title}"?`)) deleteEvent(event.id)
-                          }}
-                          className="text-destructive hover:bg-destructive/10 shrink-0 size-8"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0 space-y-3 text-xs text-muted-foreground">
-                        <p className="line-clamp-2">{event.tagline}</p>
-                        <div className="flex justify-between border-t pt-2 font-medium text-foreground">
-                          <span>Registrations: {eventRegs.length} / {event.capacity}</span>
-                          <span>Fee: {formatFee(event.fee)}</span>
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <Button variant="outline" size="sm" className="w-full text-xs" render={<Link to={`/events/${event.id}`} />}>
-                            View Event Page
+
+                        <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base font-bold leading-tight truncate" title={event.title}>
+                              {event.title}
+                            </CardTitle>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{event.tagline || event.department}</p>
+                          </div>
+                          {/* Trash can delete button */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteEvent(event.id, event.title)}
+                            className="text-destructive hover:bg-destructive/10 shrink-0 size-8 rounded-lg"
+                            title="Delete Event"
+                          >
+                            <Trash2 className="size-4" />
                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
+                        </CardHeader>
+
+                        <CardContent className="p-4 pt-0 space-y-3 text-xs text-muted-foreground">
+                          <div className="flex justify-between border-t pt-2 font-medium text-foreground">
+                            <span>Registrations: {eventRegs.length} / {event.capacity}</span>
+                            <span>Fee: {formatFee(event.fee)}</span>
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            {/* Live event page link */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs font-semibold gap-1.5"
+                              render={<Link to={`/events/${event.id}`} />}
+                            >
+                              <span>View Live Event Page</span>
+                              <ArrowRight className="size-3.5" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
             </TabsContent>
 
-            {/* TAB 2: QR SCANNER & MANUAL CODE CHECK-IN */}
+            {/* TAB 2: QR SCANNER & AUTO-ATTENDANCE CHECK-IN */}
             <TabsContent value="scanner" className="space-y-4">
               <Card className="rounded-3xl border max-w-xl mx-auto shadow-sm">
                 <CardHeader className="text-center pb-2">
@@ -582,27 +724,40 @@ export default function DashboardPage() {
                   </div>
                   <CardTitle className="text-xl font-bold">QR Scanner & Check-in</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    Enter the participant's <span className="font-mono text-primary font-semibold">Ticket ID</span> (e.g. SIT-A89F2K) to verify attendance.
+                    Auto-attendance recognition active. Type, paste, or scan the participant's{' '}
+                    <span className="font-mono text-primary font-semibold">Ticket ID</span> (e.g.{' '}
+                    <span className="underline cursor-pointer" onClick={() => handleScanInputChange('SIT-4308AD')}>
+                      SIT-4308AD
+                    </span>
+                    ) to verify entry.
                   </p>
+                  <div className="pt-2 flex justify-center">
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[11px] font-semibold gap-1.5">
+                      <Zap className="size-3 text-emerald-600 animate-pulse" />
+                      Auto-Scanner Ready (Organizer RBAC Token Protected)
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="p-6 pt-2 space-y-4">
-                  <form onSubmit={handleMarkAttendanceSubmit} className="flex gap-2">
+                  {/* Scanner Input Form */}
+                  <form onSubmit={handleManualScanSubmit} className="flex gap-2">
                     <Input
                       value={scanCode}
-                      onChange={(e) => setScanCode(e.target.value)}
-                      placeholder="Enter Ticket ID (e.g. SIT-A89F2K)"
-                      className="font-mono uppercase text-sm h-11"
+                      onChange={(e) => handleScanInputChange(e.target.value)}
+                      placeholder="Scan QR or Enter Ticket ID (e.g. SIT-4308AD)"
+                      className="font-mono uppercase text-sm h-11 bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                       required
+                      autoFocus
                     />
                     <Button
                       type="submit"
                       disabled={isVerifying}
-                      className="h-11 px-6 font-semibold rounded-xl shrink-0 gap-2"
+                      className="h-11 px-6 font-semibold rounded-xl shrink-0 gap-2 shadow-sm"
                     >
                       {isVerifying ? (
                         <>
                           <span className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Marking...
+                          Verifying...
                         </>
                       ) : (
                         <>
@@ -613,25 +768,68 @@ export default function DashboardPage() {
                     </Button>
                   </form>
 
+                  {/* Interactive Quick Scan Simulator for Live Tickets */}
+                  {pendingTickets.length > 0 && (
+                    <div className="rounded-xl bg-muted/50 p-3 border text-xs space-y-1.5">
+                      <span className="text-[11px] font-medium text-muted-foreground block">
+                        Quick-Simulate Barcode / QR Scan with Pending Ticket:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pendingTickets.map((t) => (
+                          <button
+                            key={t.ticket_id}
+                            type="button"
+                            onClick={() => handleScanInputChange(t.ticket_id)}
+                            className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-background border hover:bg-primary/10 hover:border-primary transition-colors text-primary"
+                          >
+                            ⚡ {t.ticket_id} ({t.student_name.split(' ')[0]})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Scan Result Feedback */}
                   {scanResult && (
-                    <div className={cn(
-                      'p-4 rounded-2xl border text-xs space-y-2 animate-in fade-in zoom-in-95',
-                      scanResult.status === 'success' && 'bg-emerald-50/90 border-emerald-300 text-emerald-900 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-200',
-                      scanResult.status === 'already' && 'bg-amber-50/90 border-amber-300 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200',
-                      scanResult.status === 'not-found' && 'bg-rose-50/90 border-rose-300 text-rose-900 dark:bg-rose-950 dark:border-rose-800 dark:text-rose-200'
-                    )}>
+                    <div
+                      className={cn(
+                        'p-4 rounded-2xl border text-xs space-y-2 animate-in fade-in zoom-in-95',
+                        scanResult.status === 'success' &&
+                          'bg-emerald-50/90 border-emerald-300 text-emerald-900 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-200',
+                        scanResult.status === 'already' &&
+                          'bg-amber-50/90 border-amber-300 text-amber-900 dark:bg-amber-950 dark:border-amber-800 dark:text-amber-200',
+                        scanResult.status === 'forbidden' &&
+                          'bg-rose-50/90 border-rose-300 text-rose-900 dark:bg-rose-950 dark:border-rose-800 dark:text-rose-200',
+                        scanResult.status === 'not-found' &&
+                          'bg-rose-50/90 border-rose-300 text-rose-900 dark:bg-rose-950 dark:border-rose-800 dark:text-rose-200',
+                      )}
+                    >
                       {scanResult.status === 'success' && (
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.5 font-bold text-sm text-emerald-700 dark:text-emerald-400">
                             <CheckCircle2 className="size-4" />
-                            ATTENDANCE VERIFIED!
+                            ATTENDANCE VERIFIED BY ORGANIZER!
                           </div>
-                          <p>Student Name: <strong>{scanResult.registration.student_name || scanResult.registration.name}</strong></p>
-                          <p>Roll Number: <strong>{scanResult.registration.rollNumber || 'N/A'}</strong></p>
-                          <p>Ticket ID: <span className="font-mono font-bold">{scanResult.registration.ticket_id || scanResult.registration.code}</span></p>
+                          <p>
+                            Student Name:{' '}
+                            <strong>
+                              {scanResult.registration.student_name || scanResult.registration.name}
+                            </strong>
+                          </p>
+                          <p>
+                            Roll Number:{' '}
+                            <strong>{scanResult.registration.rollNumber || 'N/A'}</strong>
+                          </p>
+                          <p>
+                            Ticket ID:{' '}
+                            <span className="font-mono font-bold">
+                              {scanResult.registration.ticket_id || scanResult.registration.code}
+                            </span>
+                          </p>
                           {scanResult.registration.event_title && (
-                            <p>Event: <strong>{scanResult.registration.event_title}</strong></p>
+                            <p>
+                              Event: <strong>{scanResult.registration.event_title}</strong>
+                            </p>
                           )}
                         </div>
                       )}
@@ -642,7 +840,20 @@ export default function DashboardPage() {
                             <AlertTriangle className="size-4" />
                             ALREADY CHECKED IN
                           </div>
-                          <p>Attendee: <strong>{scanResult.registration.student_name || scanResult.registration.name}</strong> was previously verified.</p>
+                          <p>
+                            Attendee:{' '}
+                            <strong>
+                              {scanResult.registration.student_name || scanResult.registration.name}
+                            </strong>{' '}
+                            was previously verified.
+                          </p>
+                        </div>
+                      )}
+
+                      {scanResult.status === 'forbidden' && (
+                        <div className="flex items-center gap-1.5 font-bold text-sm text-rose-700 dark:text-rose-400">
+                          <AlertTriangle className="size-4" />
+                          403 Forbidden: Only users with the ORGANIZER or Admin role can verify attendance!
                         </div>
                       )}
 
@@ -668,7 +879,7 @@ export default function DashboardPage() {
                       value={rosterSearch}
                       onChange={(e) => setRosterSearch(e.target.value)}
                       placeholder="Search student name, roll # or ticket ID..."
-                      className="pl-9 h-10 text-xs"
+                      className="pl-9 h-10 text-xs bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                     />
                   </div>
 
@@ -676,19 +887,19 @@ export default function DashboardPage() {
                     <Select
                       items={[
                         { value: 'all', label: 'All Events' },
-                        ...events.map((e) => ({ value: e.id, label: e.title })),
+                        ...eventsList.map((e) => ({ value: e.id, label: e.title })),
                       ]}
                       value={selectedEventIdFilter}
                       onValueChange={(val) => setSelectedEventIdFilter(val || 'all')}
                     >
-                      <SelectTrigger className="h-10 text-xs min-w-44">
+                      <SelectTrigger className="h-10 text-xs min-w-44 bg-slate-900/60 border border-slate-700/80 text-white data-placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [&_svg]:text-white [&_svg]:opacity-100">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-slate-900 border border-slate-700 text-white shadow-2xl backdrop-blur-md">
                         <SelectGroup>
-                          <SelectItem value="all">All Events</SelectItem>
-                          {events.map((e) => (
-                            <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>
+                          <SelectItem value="all" className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">All Events</SelectItem>
+                          {eventsList.map((e) => (
+                            <SelectItem key={e.id} value={e.id} className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">{e.title}</SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
@@ -700,7 +911,7 @@ export default function DashboardPage() {
                       onClick={() => loadRoster(selectedEventIdFilter)}
                       className="h-10 text-xs gap-1.5"
                     >
-                      <RefreshCw className={cn("size-3.5", isLoadingRoster && "animate-spin")} />
+                      <RefreshCw className={cn('size-3.5', isLoadingRoster && 'animate-spin')} />
                       Refresh
                     </Button>
                   </div>
@@ -720,7 +931,7 @@ export default function DashboardPage() {
                       {filteredRoster.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="p-8 text-center text-muted-foreground text-xs">
-                            {isLoadingRoster ? 'Loading participant roster...' : 'No participant registrations found.'}
+                            {isLoadingRoster ? 'Loading participant roster...' : 'No participant registrations found in MySQL.'}
                           </td>
                         </tr>
                       ) : (
@@ -749,14 +960,7 @@ export default function DashboardPage() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={async () => {
-                                        try {
-                                          await verifyAttendanceApi(ticketId)
-                                          loadRoster(selectedEventIdFilter)
-                                        } catch {
-                                          setCheckedIn(String(r.id), true)
-                                        }
-                                      }}
+                                      onClick={() => executeVerify(ticketId)}
                                       className="h-6 text-[10px] px-2 text-primary hover:bg-primary/10"
                                     >
                                       Mark Present
@@ -773,152 +977,11 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* TAB 4: BROADCAST ANNOUNCEMENTS */}
-            <TabsContent value="announcements" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-12">
-                {/* Form */}
-                <Card className="md:col-span-5 rounded-3xl border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Broadcast Announcement</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <form onSubmit={handleAddAnnouncementSubmit} className="space-y-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="annTitle" className="text-xs">Announcement Title</Label>
-                        <Input
-                          id="annTitle"
-                          value={annTitle}
-                          onChange={(e) => setAnnTitle(e.target.value)}
-                          placeholder="e.g. Venue Change for CodeStorm"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="annMsg" className="text-xs">Message Content</Label>
-                        <Textarea
-                          id="annMsg"
-                          rows={3}
-                          value={annMessage}
-                          onChange={(e) => setAnnMessage(e.target.value)}
-                          placeholder="Broadcast details to attendee notifications..."
-                          required
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Priority</Label>
-                          <Select value={annPriority} onValueChange={(v) => setAnnPriority((v as any) || 'normal')}>
-                            <SelectTrigger className="text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="normal">Normal</SelectItem>
-                                <SelectItem value="urgent">Urgent</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label className="text-xs">Target Event</Label>
-                          <Select value={annEventId} onValueChange={(val) => setAnnEventId(val || 'all')}>
-                            <SelectTrigger className="text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="all">All Events</SelectItem>
-                                {events.map((e) => (
-                                  <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <Button type="submit" className="w-full h-10 text-xs font-semibold rounded-xl mt-2">
-                        Post Announcement
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                {/* Feed */}
-                <Card className="md:col-span-7 rounded-3xl border">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-bold">Active Broadcast Stream</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {announcements.map((ann) => (
-                      <div key={ann.id} className="flex items-start justify-between p-4 rounded-2xl border bg-card gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-sm text-foreground">{ann.title}</h4>
-                            {ann.priority === 'urgent' && (
-                              <Badge variant="destructive" className="text-[10px]">Urgent</Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{ann.message}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteAnnouncement(ann.id)}
-                          className="text-destructive hover:bg-destructive/10 shrink-0 size-8"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* TAB 5: ADMIN SYSTEM GOVERNANCE */}
-            <TabsContent value="admin" className="space-y-6">
-              <Card className="rounded-3xl border p-6 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                    <Shield className="size-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">System Governance & Database Control</h3>
-                    <p className="text-xs text-muted-foreground">Manage campus event policies and database resets.</p>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-4">
-                  <div>
-                    <h4 className="font-bold">Reset Database to Initial Seed Data</h4>
-                    <p className="text-[11px] text-amber-800 dark:text-amber-300">
-                      Wipes all custom events, student registrations, and restored demo datasets.
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (confirm('Reset entire database to initial seed data?')) {
-                        resetDatabase()
-                        alert('Database reset to initial demo seeds!')
-                      }
-                    }}
-                    className="border-amber-500/40 text-amber-900 dark:text-amber-100 hover:bg-amber-500/20 shrink-0"
-                  >
-                    <RefreshCw className="size-4 mr-1.5" />
-                    Reset Data Store
-                  </Button>
-                </div>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   )
 }

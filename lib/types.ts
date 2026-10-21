@@ -28,6 +28,7 @@ export type EventItem = {
   teamSize?: number
   prize?: string
   image: string
+  image_url?: string
   tags: string[]
 }
 

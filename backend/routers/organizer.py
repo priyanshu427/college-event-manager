@@ -127,3 +127,10 @@ def get_event_roster(event_id: str, db: Session = Depends(get_db)):
         })
 
     return roster
+
+
+@router.get("/events")
+def get_organizer_events(db: Session = Depends(get_db)):
+    from backend.routers.events import db_event_to_dict
+    events = db.query(models.Event).order_by(models.Event.date.asc()).all()
+    return [db_event_to_dict(e) for e in events]

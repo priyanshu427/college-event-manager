@@ -1,15 +1,24 @@
 import json
+import os
+import shutil
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
 from backend import models
-from backend.auth_utils import get_current_user_id
+from backend.auth_utils import get_current_user, get_current_user_id
 
 router = APIRouter(prefix="/api/events", tags=["events"])
+
+STATIC_UPLOAD_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "public",
+    "uploads",
+)
+os.makedirs(STATIC_UPLOAD_DIR, exist_ok=True)
 
 class EventItemSchema(BaseModel):
     id: str
@@ -30,6 +39,7 @@ class EventItemSchema(BaseModel):
     teamSize: Optional[int] = None
     prize: Optional[str] = None
     image: str
+    image_url: Optional[str] = None
     tags: List[str]
 
     class Config:
@@ -250,26 +260,28 @@ INITIAL_SEED_EVENTS = [
 ]
 
 def db_event_to_dict(event: models.Event) -> dict:
+    img = event.image_url or event.image or "/events/tech-fest.png"
     return {
         "id": event.id,
         "title": event.title,
         "tagline": event.tagline or "",
         "description": event.description or "",
         "category": event.category,
-        "status": event.status,
+        "status": event.status or "upcoming",
         "date": event.date,
         "startTime": event.startTime or "",
         "endTime": event.endTime or "",
         "venue": event.venue or "",
         "department": event.department or "",
-        "organizer": event.organizer or "",
-        "capacity": event.capacity,
-        "fee": event.fee,
-        "teamEvent": event.teamEvent,
+        "organizer": event.organizer or "Campus Organizer",
+        "capacity": event.capacity or 100,
+        "fee": event.fee or 0,
+        "teamEvent": bool(event.teamEvent),
         "teamSize": event.teamSize,
         "prize": event.prize,
-        "image": event.image or "/events/hackathon.png",
-        "tags": json.loads(event.tags) if event.tags and event.tags.startswith("[") else (event.tags.split(",") if event.tags else []),
+        "image": img,
+        "image_url": img,
+        "tags": json.loads(event.tags) if event.tags and event.tags.startswith("[") else (event.tags.split(",") if event.tags else ["Campus", event.category]),
     }
 
 
@@ -295,6 +307,7 @@ def seed_database_events(db: Session):
                 teamSize=ev.get("teamSize"),
                 prize=ev.get("prize"),
                 image=ev["image"],
+                image_url=ev["image"],
                 tags=json.dumps(ev["tags"]),
             )
             db.add(db_ev)
@@ -303,14 +316,12 @@ def seed_database_events(db: Session):
 
 @router.get("", response_model=List[EventItemSchema])
 def get_all_events(db: Session = Depends(get_db)):
-    seed_database_events(db)
-    events = db.query(models.Event).all()
+    events = db.query(models.Event).order_by(models.Event.date.asc()).all()
     return [db_event_to_dict(e) for e in events]
 
 
 @router.get("/{id}", response_model=EventItemSchema)
 def get_event(id: str, db: Session = Depends(get_db)):
-    seed_database_events(db)
     event = db.query(models.Event).filter(models.Event.id == id).first()
     if not event:
         raise HTTPException(
@@ -321,28 +332,69 @@ def get_event(id: str, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=EventItemSchema, status_code=status.HTTP_201_CREATED)
-def create_event(event_in: EventCreate, db: Session = Depends(get_db)):
+async def create_event(
+    title: str = Form(...),
+    tagline: Optional[str] = Form(""),
+    category: str = Form("Technical"),
+    date: str = Form(...),
+    startTime: str = Form(...),
+    endTime: str = Form(...),
+    venue: str = Form(...),
+    department: str = Form(...),
+    capacity: int = Form(100),
+    fee: int = Form(0),
+    description: Optional[str] = Form(""),
+    image: Optional[UploadFile] = File(None),
+    status: Optional[str] = Form("upcoming"),
+    organizer: Optional[str] = Form(None),
+    teamEvent: Optional[bool] = Form(False),
+    teamSize: Optional[int] = Form(None),
+    prize: Optional[str] = Form(None),
+    tags: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    upload_dir = STATIC_UPLOAD_DIR
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    image_url = "/events/tech-fest.png"
+    if image and image.filename:
+        ext = os.path.splitext(image.filename)[1] or ".png"
+        clean_filename = f"event_{uuid.uuid4().hex[:12]}{ext}"
+        target_path = os.path.join(upload_dir, clean_filename)
+        with open(target_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        image_url = f"/uploads/{clean_filename}"
+
     new_id = f"ev-{uuid.uuid4().hex[:8]}"
+
+    parsed_tags = ["Campus", category]
+    if tags:
+        try:
+            parsed_tags = json.loads(tags) if tags.startswith("[") else [t.strip() for t in tags.split(",") if t.strip()]
+        except Exception:
+            parsed_tags = [tags]
+
     db_event = models.Event(
         id=new_id,
-        title=event_in.title,
-        tagline=event_in.tagline,
-        description=event_in.description,
-        category=event_in.category,
-        status=event_in.status,
-        date=event_in.date,
-        startTime=event_in.startTime,
-        endTime=event_in.endTime,
-        venue=event_in.venue,
-        department=event_in.department,
-        organizer=event_in.organizer,
-        capacity=event_in.capacity,
-        fee=event_in.fee,
-        teamEvent=event_in.teamEvent,
-        teamSize=event_in.teamSize,
-        prize=event_in.prize,
-        image=event_in.image,
-        tags=json.dumps(event_in.tags),
+        title=title.strip(),
+        tagline=(tagline or "").strip(),
+        description=(description or "").strip(),
+        category=category.strip(),
+        status=status or "upcoming",
+        date=date.strip(),
+        startTime=startTime.strip(),
+        endTime=endTime.strip(),
+        venue=venue.strip(),
+        department=department.strip(),
+        organizer=(organizer or "Campus Organizer").strip(),
+        capacity=capacity,
+        fee=fee,
+        teamEvent=bool(teamEvent),
+        teamSize=teamSize,
+        prize=prize,
+        image=image_url,
+        image_url=image_url,
+        tags=json.dumps(parsed_tags),
     )
     db.add(db_event)
     db.commit()
@@ -372,15 +424,31 @@ def update_event(id: str, patch: EventUpdate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(id: str, db: Session = Depends(get_db)):
+def delete_event(
+    id: str,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_role = (current_user.role or "").strip().lower()
+    if user_role not in ["organizer", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only organizers or administrators can delete events.",
+        )
+
     db_event = db.query(models.Event).filter(models.Event.id == id).first()
     if not db_event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Event with id '{id}' not found",
         )
+
+    # Cascade delete registrations
+    db.query(models.Registration).filter(models.Registration.event_id == id).delete()
+
     db.delete(db_event)
     db.commit()
+    return None
 
 
 @router.post("/reset", response_model=List[EventItemSchema])

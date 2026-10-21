@@ -67,6 +67,7 @@ type StoreValue = {
   createEvent: (event: Omit<EventItem, 'id'>) => EventItem
   updateEvent: (id: string, patch: Partial<EventItem>) => void
   deleteEvent: (id: string) => void
+  refreshEvents: () => Promise<void>
   register: (input: NewRegistrationInput) => Registration
   addRegistration: (reg: Registration) => void
   cancelRegistration: (id: string) => void
@@ -324,9 +325,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id))
     setRegistrations((prev) => prev.filter((r) => r.eventId !== id))
-    deleteEventApi(id).catch((err) =>
+    deleteEventApi(id, token).catch((err) =>
       console.error('Error deleting event on FastAPI backend:', err),
     )
+  }, [token])
+
+  const refreshEvents = useCallback(async () => {
+    try {
+      const data = await fetchEvents()
+      if (data && Array.isArray(data)) {
+        setEvents(data)
+      }
+    } catch (err) {
+      console.warn('Could not refresh events from backend:', err)
+    }
   }, [])
 
   const register = useCallback((input: NewRegistrationInput) => {
@@ -451,6 +463,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createEvent,
       updateEvent,
       deleteEvent,
+      refreshEvents,
       register,
       addRegistration,
       cancelRegistration,
@@ -482,6 +495,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       createEvent,
       updateEvent,
       deleteEvent,
+      refreshEvents,
       register,
       addRegistration,
       cancelRegistration,

@@ -23,15 +23,30 @@ export async function fetchEventById(id: string): Promise<EventItem> {
 }
 
 export async function createEventApi(
-  event: Omit<EventItem, 'id'>,
+  event: FormData | Omit<EventItem, 'id'>,
+  token?: string,
 ): Promise<EventItem> {
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  let body: any
+  if (event instanceof FormData) {
+    body = event
+  } else {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify(event)
+  }
+
   const res = await fetch(`${API_BASE_URL}/events`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(event),
+    headers,
+    body,
   })
   if (!res.ok) {
-    throw new Error(`Failed to create event: ${res.statusText}`)
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Failed to create event: ${res.statusText}`)
   }
   return res.json()
 }
@@ -51,12 +66,18 @@ export async function updateEventApi(
   return res.json()
 }
 
-export async function deleteEventApi(id: string): Promise<void> {
+export async function deleteEventApi(id: string, token?: string): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
   const res = await fetch(`${API_BASE_URL}/events/${id}`, {
     method: 'DELETE',
+    headers,
   })
   if (!res.ok) {
-    throw new Error(`Failed to delete event ${id}: ${res.statusText}`)
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Failed to delete event ${id}: ${res.statusText}`)
   }
 }
 
@@ -127,15 +148,30 @@ export async function registerForEventApi(
 
 export async function verifyAttendanceApi(
   ticketId: string,
+  token?: string,
 ): Promise<{ status: string; message: string; already_verified?: boolean; registration: any }> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
   const res = await fetch(`${API_BASE_URL}/attendance/verify`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ ticket_id: ticketId }),
   })
   if (!res.ok) {
     const errorData = await res.json().catch(() => null)
     throw new Error(errorData?.detail || `Attendance verification failed: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function fetchOrganizerEventsApi(): Promise<EventItem[]> {
+  const res = await fetch(`${API_BASE_URL}/organizer/events`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch organizer events: ${res.statusText}`)
   }
   return res.json()
 }

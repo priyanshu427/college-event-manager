@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend import models
+from backend.auth_utils import get_current_user
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
@@ -10,7 +11,18 @@ class VerifyAttendanceRequest(BaseModel):
     ticket_id: str
 
 @router.post("/verify")
-def verify_attendance(req: VerifyAttendanceRequest, db: Session = Depends(get_db)):
+def verify_attendance(
+    req: VerifyAttendanceRequest,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Enforce strict RBAC: ONLY Organizer or Admin can verify attendance
+    user_role = (current_user.role or "").strip().lower()
+    if user_role not in ["organizer", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only organizers or administrators can verify attendance.",
+        )
     ticket_code = req.ticket_id.strip()
     if not ticket_code:
         raise HTTPException(

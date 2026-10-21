@@ -35,6 +35,7 @@ class Event(Base):
     teamSize = Column(Integer, nullable=True)
     prize = Column(String(255), nullable=True)
     image = Column(String(500), nullable=True)
+    image_url = Column(String(500), nullable=True)
     tags = Column(Text, nullable=True)  # Store comma-separated string
     created_by = Column(String(255), nullable=True)
 

@@ -42,10 +42,11 @@ def decode_access_token(token: str) -> dict:
     # Fallback: if token is raw user_id (e.g. usr-xxx or email or demo token)
     return {"user_id": token}
 
-def get_current_user_id(
+def get_current_user(
     authorization: Optional[str] = Header(None),
     x_user_id: Optional[str] = Header(None),
-) -> str:
+    db: Session = Depends(get_db)
+) -> models.User:
     token = None
     if authorization:
         parts = authorization.strip().split()
@@ -66,36 +67,40 @@ def get_current_user_id(
 
     data = decode_access_token(token)
     user_id = data.get("user_id")
+    token_role = data.get("role")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token.",
         )
-    return user_id
 
-def get_current_user(
-    user_id: str = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
-) -> models.User:
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
-        # Check by email if user_id happens to be email
         user = db.query(models.User).filter(models.User.email == user_id).first()
 
     if not user:
-        # Auto-provision user record for seamless foreign key resolution
-        name_candidate = user_id.split("@")[0].replace(".", " ").title() if "@" in user_id else f"Student {user_id[-4:]}"
+        candidate_role = token_role or ("organizer" if "organizer" in user_id.lower() else ("admin" if "admin" in user_id.lower() else "student"))
+        name_candidate = user_id.split("@")[0].replace(".", " ").title() if "@" in user_id else f"User {user_id[-4:]}"
         user = models.User(
             id=user_id,
             name=name_candidate,
             email=user_id if "@" in user_id else f"{user_id}@sit.edu.in",
             password_hash="demo1234",
-            role="student",
+            role=candidate_role,
             rollNumber=user_id.upper(),
             department="Sunrise Institute of Technology",
         )
         db.add(user)
         db.commit()
         db.refresh(user)
+    elif token_role and token_role.lower() != (user.role or "").lower():
+        user.role = token_role.lower()
+        db.commit()
+        db.refresh(user)
 
     return user
+
+def get_current_user_id(
+    current_user: models.User = Depends(get_current_user),
+) -> str:
+    return current_user.id
