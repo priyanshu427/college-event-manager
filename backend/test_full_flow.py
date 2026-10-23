@@ -450,9 +450,78 @@ def test_full_flow():
         runner.record("6.4", "Participant roster status check", False, str(e))
 
     # ---------------------------------------------------------
-    # 7. Cleanup
+    # 7. Dynamic Certificate Generation & Close Event Flow
     # ---------------------------------------------------------
-    print(f"\n{BOLD}{BLUE}[Phase 7] Cleanup & Cascading Deletion{RESET}")
+    print(f"\n{BOLD}{BLUE}[Phase 7] Dynamic Certificate Generation & Event Closing{RESET}")
+    issued_cert_id = None
+    try:
+        # 7.1 Check certificates before event close (must be 0 for this event)
+        headers_student = {"Authorization": f"Bearer {student_token}"}
+        certs_before_res = requests.get(f"{BASE_URL}/api/certificates/me", headers=headers_student, timeout=5)
+        certs_before = certs_before_res.json() if certs_before_res.status_code == 200 else []
+        prior_cert = any(c.get("event_id") == created_event_id for c in certs_before)
+        runner.record(
+            "7.1",
+            "Certificates unissued before event is closed (0 certificates for open event)",
+            certs_before_res.status_code == 200 and not prior_cert,
+            "Confirmed no certificate issued prematurely",
+        )
+    except Exception as e:
+        runner.record("7.1", "Certificate pre-close verification", False, str(e))
+
+    try:
+        # 7.2 Organizer closes event & assigns 1st place to Student 1
+        headers_org = {"Authorization": f"Bearer {organizer_token}"}
+        close_payload = {
+            "first_place_ticket_id": student_ticket_1,
+            "second_place_ticket_id": None,
+            "third_place_ticket_id": None,
+        }
+        close_res = requests.post(
+            f"{BASE_URL}/api/organizer/events/{created_event_id}/close",
+            json=close_payload,
+            headers=headers_org,
+            timeout=5
+        )
+        c_data = close_res.json() if close_res.status_code == 200 else {}
+        runner.record(
+            "7.2",
+            "Organizer closes event & triggers certificate issuance with 1st place podium",
+            close_res.status_code == 200 and c_data.get("certificates_issued", 0) >= 1,
+            f"Status: '{c_data.get('event_status')}', Certificates Issued: {c_data.get('certificates_issued')}",
+        )
+    except Exception as e:
+        runner.record("7.2", "Close event and issue certificates", False, str(e))
+
+    try:
+        # 7.3 Student fetches earned certificates via GET /api/certificates/me
+        certs_after_res = requests.get(f"{BASE_URL}/api/certificates/me", headers=headers_student, timeout=5)
+        earned_cert = None
+        if certs_after_res.status_code == 200:
+            for c in certs_after_res.json():
+                if c.get("event_id") == created_event_id:
+                    earned_cert = c
+                    issued_cert_id = c.get("certificate_id")
+                    break
+
+        cert_valid = (
+            earned_cert is not None
+            and earned_cert.get("award_rank") == "1st Place"
+            and str(issued_cert_id).startswith("CERT-")
+        )
+        runner.record(
+            "7.3",
+            "Student retrieves earned dynamic certificate with '1st Place' award rank",
+            cert_valid,
+            f"Certificate ID: {issued_cert_id}, Award Rank: '{earned_cert.get('award_rank') if earned_cert else None}'",
+        )
+    except Exception as e:
+        runner.record("7.3", "Retrieve earned certificates via GET /api/certificates/me", False, str(e))
+
+    # ---------------------------------------------------------
+    # 8. Cleanup
+    # ---------------------------------------------------------
+    print(f"\n{BOLD}{BLUE}[Phase 8] Cleanup & Cascading Deletion{RESET}")
     if created_event_id:
         try:
             del_res = requests.delete(
@@ -463,13 +532,13 @@ def test_full_flow():
             check_del = requests.get(f"{BASE_URL}/api/events/{created_event_id}", timeout=5)
             cleaned_up = del_res.status_code == 204 and check_del.status_code == 404
             runner.record(
-                "7.1",
+                "8.1",
                 "Organizer deletes test event and associated records cascade successfully",
                 cleaned_up,
                 f"Delete HTTP {del_res.status_code}, Verification GET HTTP {check_del.status_code} (Not Found)",
             )
         except Exception as e:
-            runner.record("7.1", "Cleanup of test event", False, str(e))
+            runner.record("8.1", "Cleanup of test event", False, str(e))
 
     success = runner.summary()
     assert success is True, "One or more end-to-end flow tests failed"

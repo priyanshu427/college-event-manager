@@ -1,4 +1,4 @@
-import type { EventItem } from '@/lib/types'
+import type { EventItem, CertificateItem } from '@/lib/types'
 
 export const API_BASE_URL = 'http://127.0.0.1:8000/api'
 
@@ -197,6 +197,60 @@ export async function fetchEventRosterApi(
   })
   if (!res.ok) {
     throw new Error(`Failed to fetch roster: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function closeEventApi(
+  eventId: string,
+  winners: {
+    first_place_ticket_id?: string
+    second_place_ticket_id?: string
+    third_place_ticket_id?: string
+  },
+  token?: string,
+): Promise<{
+  status: string
+  message: string
+  event_id: string
+  event_status: string
+  certificates_issued: number
+  winners: Record<string, string>
+}> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_BASE_URL}/organizer/events/${eventId}/close`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(winners),
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Failed to close event: ${res.statusText}`)
+  }
+  return res.json()
+}
+
+export async function fetchMyCertificatesApi(token?: string): Promise<CertificateItem[]> {
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const res = await fetch(`${API_BASE_URL}/certificates/me`, {
+    headers,
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null)
+    throw new Error(errorData?.detail || `Failed to fetch certificates: ${res.statusText}`)
   }
   return res.json()
 }

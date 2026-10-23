@@ -77,4 +77,24 @@ export type CurrentUser = {
   role?: Role
 }
 
+export interface CertificateItem {
+  id: number | string
+  certificate_id: string
+  award_rank: string // "Participation" | "1st Place" | "2nd Place" | "3rd Place"
+  ticket_id: string
+  event_id: string
+  event_title: string
+  event_tagline: string
+  event_category: string
+  event_date: string
+  event_venue: string
+  event_department: string
+  event_organizer: string
+  student_name: string
+  student_email: string
+  student_roll_number: string
+  student_department: string
+  attendance_verified: boolean
+}
+
 

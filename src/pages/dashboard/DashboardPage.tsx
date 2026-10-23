@@ -16,6 +16,7 @@ import {
   Zap,
   Upload,
   ArrowRight,
+  Award,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import {
@@ -24,6 +25,7 @@ import {
   fetchOrganizerEventsApi,
   createEventApi,
   deleteEventApi,
+  closeEventApi,
 } from '@/lib/api'
 import type { EventCategory, EventItem } from '@/lib/types'
 import { EVENT_CATEGORIES, formatFee } from '@/lib/format'
@@ -126,6 +128,81 @@ export default function DashboardPage() {
   const [isLoadingRoster, setIsLoadingRoster] = useState(false)
   const [rosterSearch, setRosterSearch] = useState('')
   const [selectedEventIdFilter, setSelectedEventIdFilter] = useState('all')
+
+  // Close Event & Issue Certificates State
+  const [closingEvent, setClosingEvent] = useState<EventItem | null>(null)
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
+  const [closeRoster, setCloseRoster] = useState<
+    Array<{
+      id: number | string
+      ticket_id: string
+      code: string
+      event_id: string
+      student_name: string
+      name: string
+      rollNumber: string
+      email: string
+      department?: string
+      attendance_verified: boolean
+    }>
+  >([])
+  const [isLoadingCloseRoster, setIsLoadingCloseRoster] = useState(false)
+  const [firstPlaceTicket, setFirstPlaceTicket] = useState<string>('')
+  const [secondPlaceTicket, setSecondPlaceTicket] = useState<string>('')
+  const [thirdPlaceTicket, setThirdPlaceTicket] = useState<string>('')
+  const [isSubmittingClose, setIsSubmittingClose] = useState(false)
+  const [closeSuccessMessage, setCloseSuccessMessage] = useState<string | null>(null)
+
+  const handleOpenCloseModal = async (event: EventItem) => {
+    setClosingEvent(event)
+    setFirstPlaceTicket('')
+    setSecondPlaceTicket('')
+    setThirdPlaceTicket('')
+    setCloseSuccessMessage(null)
+    setIsCloseModalOpen(true)
+    setIsLoadingCloseRoster(true)
+    try {
+      const roster = await fetchEventRosterApi(event.id)
+      setCloseRoster(roster)
+    } catch (err) {
+      console.error('Error fetching roster for close modal:', err)
+      setCloseRoster([])
+    } finally {
+      setIsLoadingCloseRoster(false)
+    }
+  }
+
+  const handleConfirmCloseEvent = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!closingEvent) return
+    setIsSubmittingClose(true)
+    try {
+      const res = await closeEventApi(
+        closingEvent.id,
+        {
+          first_place_ticket_id: firstPlaceTicket || undefined,
+          second_place_ticket_id: secondPlaceTicket || undefined,
+          third_place_ticket_id: thirdPlaceTicket || undefined,
+        },
+        effectiveToken,
+      )
+      setCloseSuccessMessage(res.message)
+      setEventsList((prev) =>
+        prev.map((ev) => (ev.id === closingEvent.id ? { ...ev, status: 'completed' as const } : ev))
+      )
+      loadEvents()
+      loadRoster(selectedEventIdFilter)
+      setTimeout(() => {
+        setIsCloseModalOpen(false)
+        setClosingEvent(null)
+      }, 1800)
+    } catch (err: any) {
+      console.error('Error closing event:', err)
+      alert(err.message || 'Failed to close event and issue certificates')
+    } finally {
+      setIsSubmittingClose(false)
+    }
+  }
 
   // Load live events directly from MySQL API
   const loadEvents = async () => {
@@ -562,6 +639,158 @@ export default function DashboardPage() {
                   </form>
                 </DialogContent>
               </Dialog>
+
+              {/* Close Event & Issue Certificates Modal */}
+              <Dialog open={isCloseModalOpen} onOpenChange={setIsCloseModalOpen}>
+                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto bg-slate-950 border border-slate-800 text-white rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
+                  <DialogHeader className="space-y-1.5 pb-2 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="size-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <Award className="size-5" />
+                      </div>
+                      <div>
+                        <DialogTitle className="text-xl font-bold text-white">
+                          Close Event & Issue Certificates
+                        </DialogTitle>
+                        <p className="text-xs text-slate-400">
+                          {closingEvent?.title}
+                        </p>
+                      </div>
+                    </div>
+                  </DialogHeader>
+
+                  {isLoadingCloseRoster ? (
+                    <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+                      <RefreshCw className="size-6 animate-spin text-amber-500" />
+                      <p className="text-xs font-medium">Fetching verified attendees from roster...</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleConfirmCloseEvent} className="space-y-5 pt-3">
+                      {closeSuccessMessage && (
+                        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                          <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+                          <span>{closeSuccessMessage}</span>
+                        </div>
+                      )}
+
+                      {/* Verified Attendees Summary Box */}
+                      {(() => {
+                        const verifiedList = closeRoster.filter((r) => r.attendance_verified)
+                        return (
+                          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold text-slate-300">Verified Attendees Eligible for Certificates</span>
+                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs">
+                                {verifiedList.length} Checked In
+                              </Badge>
+                            </div>
+                            <p className="text-[11px] text-slate-400 leading-relaxed">
+                              {verifiedList.length > 0
+                                ? 'All verified attendees will automatically receive an official Certificate of Participation. Select podium winners below for special Achievement Certificates.'
+                                : '⚠️ No attendees have verified check-in attendance yet for this event. Attendees must be scanned at the venue via the QR Scanner tab before certificates can be generated.'}
+                            </p>
+                          </div>
+                        )
+                      })()}
+
+                      {/* Podium Selection Dropdowns */}
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400/90">
+                          Select Podium Award Winners (Optional)
+                        </h4>
+
+                        {/* 1st Place */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                            <span>🥇 1st Place Winner</span>
+                          </Label>
+                          <select
+                            value={firstPlaceTicket}
+                            onChange={(e) => setFirstPlaceTicket(e.target.value)}
+                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-amber-500 cursor-pointer"
+                          >
+                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
+                            {closeRoster
+                              .filter((r) => r.attendance_verified)
+                              .map((att) => (
+                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
+                                  {att.student_name} ({att.rollNumber || att.ticket_id})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        {/* 2nd Place */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                            <span>🥈 2nd Place Winner</span>
+                          </Label>
+                          <select
+                            value={secondPlaceTicket}
+                            onChange={(e) => setSecondPlaceTicket(e.target.value)}
+                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
+                          >
+                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
+                            {closeRoster
+                              .filter((r) => r.attendance_verified && r.ticket_id !== firstPlaceTicket)
+                              .map((att) => (
+                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
+                                  {att.student_name} ({att.rollNumber || att.ticket_id})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        {/* 3rd Place */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-amber-600 dark:text-amber-500 flex items-center gap-1.5">
+                            <span>🥉 3rd Place Winner</span>
+                          </Label>
+                          <select
+                            value={thirdPlaceTicket}
+                            onChange={(e) => setThirdPlaceTicket(e.target.value)}
+                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-amber-600 cursor-pointer"
+                          >
+                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
+                            {closeRoster
+                              .filter(
+                                (r) =>
+                                  r.attendance_verified &&
+                                  r.ticket_id !== firstPlaceTicket &&
+                                  r.ticket_id !== secondPlaceTicket,
+                              )
+                              .map((att) => (
+                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
+                                  {att.student_name} ({att.rollNumber || att.ticket_id})
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <Button
+                          type="submit"
+                          disabled={isSubmittingClose}
+                          className="w-full h-11 font-semibold rounded-xl shadow-md gap-2 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white"
+                        >
+                          {isSubmittingClose ? (
+                            <>
+                              <RefreshCw className="size-4 animate-spin" />
+                              Closing Event & Generating Certificates...
+                            </>
+                          ) : (
+                            <>
+                              <Award className="size-4" />
+                              Issue Dynamic Certificates & Complete Event
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -659,7 +888,12 @@ export default function DashboardPage() {
                             }}
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           />
-                          <div className="absolute top-2 right-2">
+                          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                            {event.status === 'completed' && (
+                              <Badge className="text-[10px] bg-emerald-600/90 text-white font-semibold backdrop-blur shadow-sm">
+                                Completed
+                              </Badge>
+                            )}
                             <Badge variant="outline" className="text-[10px] bg-background/90 backdrop-blur font-semibold">
                               {event.category}
                             </Badge>
@@ -695,7 +929,29 @@ export default function DashboardPage() {
                             <span>Registrations: {eventRegs.length} / {event.capacity}</span>
                             <span>Fee: {formatFee(event.fee)}</span>
                           </div>
-                          <div className="flex gap-2 pt-1">
+                          <div className="flex flex-col gap-2 pt-1">
+                            {/* Close Event & Issue Certificates Button */}
+                            {event.status === 'completed' ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenCloseModal(event)}
+                                className="w-full text-xs font-semibold gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                              >
+                                <Award className="size-3.5 text-emerald-500" />
+                                <span>Event Closed · Re-issue / View Awards</span>
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleOpenCloseModal(event)}
+                                className="w-full text-xs font-semibold gap-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white shadow-sm"
+                              >
+                                <Award className="size-3.5" />
+                                <span>Close Event & Issue Certificates</span>
+                              </Button>
+                            )}
+
                             {/* Live event page link */}
                             <Button
                               variant="outline"

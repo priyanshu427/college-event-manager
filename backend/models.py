@@ -48,6 +48,8 @@ class Registration(Base):
     event_id = Column(String(64), ForeignKey("events.id"), nullable=False, index=True)
     ticket_id = Column(String(64), unique=True, index=True, nullable=False)
     attendance_verified = Column(Boolean, default=False, nullable=False)
+    certificate_id = Column(String(64), unique=True, index=True, nullable=True)
+    award_rank = Column(String(50), default="Participation", nullable=True)
 
     user = relationship("User", backref="registrations")
     event = relationship("Event", backref="registrations")

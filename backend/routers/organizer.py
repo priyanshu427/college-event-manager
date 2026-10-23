@@ -1,9 +1,11 @@
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend.database import get_db
 from backend import models
+from backend.auth_utils import get_current_user
 
 router = APIRouter(prefix="/api/organizer", tags=["organizer"])
 
@@ -134,3 +136,91 @@ def get_organizer_events(db: Session = Depends(get_db)):
     from backend.routers.events import db_event_to_dict
     events = db.query(models.Event).order_by(models.Event.date.asc()).all()
     return [db_event_to_dict(e) for e in events]
+
+
+class CloseEventRequest(BaseModel):
+    first_place_ticket_id: Optional[str] = None
+    second_place_ticket_id: Optional[str] = None
+    third_place_ticket_id: Optional[str] = None
+
+
+@router.post("/events/{event_id}/close")
+def close_event(
+    event_id: str,
+    req: CloseEventRequest = CloseEventRequest(),
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Closes a campus event and dynamically generates certificates for all verified attendees.
+    Optionally assigns podium placement ranks (1st Place, 2nd Place, 3rd Place) based on ticket IDs.
+    """
+    # Enforce strict RBAC: ONLY Organizer or Admin can close events
+    user_role = (current_user.role or "").strip().lower()
+    if user_role not in ["organizer", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only organizers or administrators can close events and issue certificates.",
+        )
+
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event with id '{event_id}' not found",
+        )
+
+    # 1. Update event status to completed
+    event.status = "completed"
+
+    # 2. Query all verified registrations for this event
+    verified_regs = (
+        db.query(models.Registration)
+        .filter(
+            models.Registration.event_id == event.id,
+            models.Registration.attendance_verified == True,
+        )
+        .all()
+    )
+
+    first_t = (req.first_place_ticket_id or "").strip().upper()
+    second_t = (req.second_place_ticket_id or "").strip().upper()
+    third_t = (req.third_place_ticket_id or "").strip().upper()
+
+    issued_count = 0
+    winners_summary = {}
+
+    for reg in verified_regs:
+        # Generate unique certificate_id if not already assigned
+        if not reg.certificate_id:
+            reg.certificate_id = f"CERT-2026-{event.id.upper()}-{uuid.uuid4().hex[:8].upper()}"
+
+        reg_ticket_upper = (reg.ticket_id or "").strip().upper()
+
+        if first_t and reg_ticket_upper == first_t:
+            reg.award_rank = "1st Place"
+            winners_summary["1st Place"] = reg.ticket_id
+        elif second_t and reg_ticket_upper == second_t:
+            reg.award_rank = "2nd Place"
+            winners_summary["2nd Place"] = reg.ticket_id
+        elif third_t and reg_ticket_upper == third_t:
+            reg.award_rank = "3rd Place"
+            winners_summary["3rd Place"] = reg.ticket_id
+        else:
+            if not reg.award_rank or reg.award_rank not in ["1st Place", "2nd Place", "3rd Place"]:
+                reg.award_rank = "Participation"
+
+        issued_count += 1
+
+    db.commit()
+    db.refresh(event)
+
+    return {
+        "status": "success",
+        "message": f"Event '{event.title}' successfully closed. {issued_count} certificates issued to verified attendees.",
+        "event_id": event.id,
+        "event_status": event.status,
+        "certificates_issued": issued_count,
+        "winners": winners_summary,
+    }
+
