@@ -51,8 +51,8 @@ def verify_attendance(
     event = db.query(models.Event).filter(models.Event.id == registration.event_id).first()
 
     return {
-        "status": "success",
-        "message": "Attendance verified successfully" if not already_verified else "Attendee already verified previously",
+        "status": "duplicate" if already_verified else "success",
+        "message": "Attendance verified successfully" if not already_verified else "Already Checked-In: Attendee verified previously",
         "already_verified": already_verified,
         "registration": {
             "id": registration.id,

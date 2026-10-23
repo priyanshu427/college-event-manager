@@ -123,6 +123,11 @@ def login_user(req: LoginRequest, db: Session = Depends(get_db)):
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+    elif req.role and req.role.strip().lower() in ["organizer", "admin", "student"]:
+        if db_user.role.lower() != req.role.strip().lower():
+            db_user.role = req.role.strip().lower()
+            db.commit()
+            db.refresh(db_user)
 
     user_dict = {
         "id": db_user.id,

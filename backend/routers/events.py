@@ -3,7 +3,7 @@ import os
 import shutil
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Header
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Header, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -333,65 +333,106 @@ def get_event(id: str, db: Session = Depends(get_db)):
 
 @router.post("", response_model=EventItemSchema, status_code=status.HTTP_201_CREATED)
 async def create_event(
-    title: str = Form(...),
-    tagline: Optional[str] = Form(""),
-    category: str = Form("Technical"),
-    date: str = Form(...),
-    startTime: str = Form(...),
-    endTime: str = Form(...),
-    venue: str = Form(...),
-    department: str = Form(...),
-    capacity: int = Form(100),
-    fee: int = Form(0),
-    description: Optional[str] = Form(""),
-    image: Optional[UploadFile] = File(None),
-    status: Optional[str] = Form("upcoming"),
-    organizer: Optional[str] = Form(None),
-    teamEvent: Optional[bool] = Form(False),
-    teamSize: Optional[int] = Form(None),
-    prize: Optional[str] = Form(None),
-    tags: Optional[str] = Form(None),
+    request: Request,
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    user_role = (current_user.role or "").strip().lower()
+    if user_role not in ["organizer", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only organizers or administrators can create events.",
+        )
+
+    content_type = request.headers.get("content-type", "")
+    data = {}
+    image_file = None
+    if "application/json" in content_type:
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+    else:
+        form = await request.form()
+        data = dict(form)
+        image_obj = form.get("image")
+        if isinstance(image_obj, UploadFile):
+            image_file = image_obj
+
+    title = data.get("title")
+    if not title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title is required",
+        )
+
+    capacity_val = data.get("capacity") if data.get("capacity") is not None else data.get("max_capacity")
+    if capacity_val is None:
+        capacity_val = 100
+    try:
+        capacity_int = int(capacity_val)
+    except (ValueError, TypeError):
+        capacity_int = 100
+
+    fee_val = data.get("fee") or 0
+    try:
+        fee_int = int(fee_val)
+    except (ValueError, TypeError):
+        fee_int = 0
+
     upload_dir = STATIC_UPLOAD_DIR
     os.makedirs(upload_dir, exist_ok=True)
     
-    image_url = "/events/tech-fest.png"
-    if image and image.filename:
-        ext = os.path.splitext(image.filename)[1] or ".png"
+    image_url = data.get("image_url") or data.get("image") or "/events/tech-fest.png"
+    if image_file and image_file.filename:
+        ext = os.path.splitext(image_file.filename)[1] or ".png"
         clean_filename = f"event_{uuid.uuid4().hex[:12]}{ext}"
         target_path = os.path.join(upload_dir, clean_filename)
         with open(target_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
+            shutil.copyfileobj(image_file.file, buffer)
         image_url = f"/uploads/{clean_filename}"
 
     new_id = f"ev-{uuid.uuid4().hex[:8]}"
 
+    category = str(data.get("category", "Technical"))
+    tags_val = data.get("tags")
     parsed_tags = ["Campus", category]
-    if tags:
-        try:
-            parsed_tags = json.loads(tags) if tags.startswith("[") else [t.strip() for t in tags.split(",") if t.strip()]
-        except Exception:
-            parsed_tags = [tags]
+    if tags_val:
+        if isinstance(tags_val, list):
+            parsed_tags = tags_val
+        elif isinstance(tags_val, str):
+            try:
+                parsed_tags = json.loads(tags_val) if tags_val.startswith("[") else [t.strip() for t in tags_val.split(",") if t.strip()]
+            except Exception:
+                parsed_tags = [tags_val]
+
+    team_size_val = data.get("teamSize")
+    try:
+        parsed_team_size = int(team_size_val) if team_size_val is not None else None
+    except (ValueError, TypeError):
+        parsed_team_size = None
+
+    team_event_val = data.get("teamEvent")
+    parsed_team_event = str(team_event_val).lower() in ["true", "1", "yes"] if team_event_val is not None else False
 
     db_event = models.Event(
         id=new_id,
-        title=title.strip(),
-        tagline=(tagline or "").strip(),
-        description=(description or "").strip(),
+        title=str(title).strip(),
+        tagline=str(data.get("tagline", "")).strip(),
+        description=str(data.get("description", "")).strip(),
         category=category.strip(),
-        status=status or "upcoming",
-        date=date.strip(),
-        startTime=startTime.strip(),
-        endTime=endTime.strip(),
-        venue=venue.strip(),
-        department=department.strip(),
-        organizer=(organizer or "Campus Organizer").strip(),
-        capacity=capacity,
-        fee=fee,
-        teamEvent=bool(teamEvent),
-        teamSize=teamSize,
-        prize=prize,
+        status=str(data.get("status", "upcoming")).strip(),
+        date=str(data.get("date", "2026-11-15")).strip(),
+        startTime=str(data.get("startTime", "10:00")).strip(),
+        endTime=str(data.get("endTime", "17:00")).strip(),
+        venue=str(data.get("venue", "Campus Main Auditorium")).strip(),
+        department=str(data.get("department", "Computer Science")).strip(),
+        organizer=str(data.get("organizer", current_user.name or "Campus Organizer")).strip(),
+        capacity=capacity_int,
+        fee=fee_int,
+        teamEvent=parsed_team_event,
+        teamSize=parsed_team_size,
+        prize=str(data.get("prize")) if data.get("prize") else None,
         image=image_url,
         image_url=image_url,
         tags=json.dumps(parsed_tags),
@@ -509,25 +550,22 @@ def register_for_event(
         .first()
     )
     if existing_reg:
-        return {
-            "status": "success",
-            "message": "Already registered for this event",
-            "ticket_id": existing_reg.ticket_id,
-            "registration": {
-                "id": str(existing_reg.id),
-                "ticket_id": existing_reg.ticket_id,
-                "code": existing_reg.ticket_id,
-                "event_id": existing_reg.event_id,
-                "eventId": existing_reg.event_id,
-                "user_id": existing_reg.user_id,
-                "student_name": user.name,
-                "name": user.name,
-                "rollNumber": user.rollNumber,
-                "email": user.email,
-                "attendance_verified": existing_reg.attendance_verified,
-                "checkedIn": existing_reg.attendance_verified,
-            },
-        }
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Student is already registered for this event.",
+        )
+
+    # 4. Check capacity limit
+    current_count = (
+        db.query(models.Registration)
+        .filter(models.Registration.event_id == event_id)
+        .count()
+    )
+    if event.capacity is not None and event.capacity > 0 and current_count >= event.capacity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Event is at full capacity ({event.capacity}/{event.capacity}). No more registrations allowed.",
+        )
 
     # 4. Generate unique ticket_id and insert new Registration
     ticket_id = f"SIT-{uuid.uuid4().hex[:6].upper()}"
