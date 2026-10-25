@@ -67,15 +67,15 @@ export function EventsBrowser() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-2xl bg-card/60 p-4 ring-1 ring-foreground/10">
+      <div className="flex flex-col gap-4 rounded-2xl bg-white/30 backdrop-blur-md p-4 border border-white/60 shadow-xs">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by event, venue, club or tag"
-              className="h-10 pl-9"
+              className="h-10 pl-9 bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-primary shadow-none"
               aria-label="Search events"
             />
           </div>
@@ -89,14 +89,14 @@ export function EventsBrowser() {
               value={category}
               onValueChange={(value) => setCategory(String(value))}
             >
-              <SelectTrigger className="h-10 min-w-40" aria-label="Category">
+              <SelectTrigger className="h-10 min-w-40 bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 shadow-none" aria-label="Category">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-slate-200 text-slate-900 shadow-xl">
                 <SelectGroup>
-                  <SelectItem value="all">All categories</SelectItem>
+                  <SelectItem value="all" className="text-slate-900 hover:bg-slate-100 cursor-pointer">All categories</SelectItem>
                   {EVENT_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
+                    <SelectItem key={c} value={c} className="text-slate-900 hover:bg-slate-100 cursor-pointer">
                       {c}
                     </SelectItem>
                   ))}
@@ -113,15 +113,15 @@ export function EventsBrowser() {
               value={sort}
               onValueChange={(value) => setSort(String(value))}
             >
-              <SelectTrigger className="h-10 min-w-40" aria-label="Sort by">
-                <SlidersHorizontalIcon className="text-muted-foreground" />
+              <SelectTrigger className="h-10 min-w-40 bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 shadow-none" aria-label="Sort by">
+                <SlidersHorizontalIcon className="text-slate-400" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-slate-200 text-slate-900 shadow-xl">
                 <SelectGroup>
-                  <SelectItem value="date">Soonest first</SelectItem>
-                  <SelectItem value="popular">Most registered</SelectItem>
-                  <SelectItem value="fee">Lowest fee</SelectItem>
+                  <SelectItem value="date" className="text-slate-900 hover:bg-slate-100 cursor-pointer">Soonest first</SelectItem>
+                  <SelectItem value="popular" className="text-slate-900 hover:bg-slate-100 cursor-pointer">Most registered</SelectItem>
+                  <SelectItem value="fee" className="text-slate-900 hover:bg-slate-100 cursor-pointer">Lowest fee</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -134,6 +134,11 @@ export function EventsBrowser() {
               key={tab.value}
               size="sm"
               variant={status === tab.value ? 'default' : 'outline'}
+              className={cn(
+                status === tab.value
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-white/70 backdrop-blur-md border border-white/60 text-slate-700 hover:bg-white/90 hover:text-slate-900'
+              )}
               onClick={() => setStatus(tab.value)}
             >
               {tab.label}
@@ -141,7 +146,7 @@ export function EventsBrowser() {
                 variant="secondary"
                 className={cn(
                   'ml-1',
-                  status === tab.value && 'bg-primary-foreground/20',
+                  status === tab.value ? 'bg-primary-foreground/20 text-white' : 'bg-slate-100 text-slate-700'
                 )}
               >
                 {tab.value === 'all'
@@ -153,18 +158,18 @@ export function EventsBrowser() {
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-slate-500 font-medium">
         Showing {filtered.length} of {events.length} events
       </p>
 
       {filtered.length === 0 ? (
-        <Empty className="rounded-2xl ring-1 ring-foreground/10">
+        <Empty className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-sm">
           <EmptyHeader>
-            <EmptyMedia variant="icon">
+            <EmptyMedia variant="icon" className="bg-primary/10 text-primary">
               <SearchIcon />
             </EmptyMedia>
-            <EmptyTitle>No events matched</EmptyTitle>
-            <EmptyDescription>
+            <EmptyTitle className="text-slate-900 font-bold">No events matched</EmptyTitle>
+            <EmptyDescription className="text-slate-600">
               Try a different keyword, or clear the category and status filters.
             </EmptyDescription>
           </EmptyHeader>

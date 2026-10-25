@@ -27,18 +27,18 @@ export function SiteFooter() {
   const { isLoggedIn } = useStore()
 
   return (
-    <footer className="border-t border-border/60 bg-card/40 print-hide">
+    <footer className="border-t border-slate-200/80 bg-white/40 backdrop-blur-md print-hide">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:flex-row lg:justify-between">
         <div className="flex max-w-sm flex-col gap-3">
           <Link to={isLoggedIn ? '/events' : '/login'} className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
               <QrCodeIcon className="size-5" />
             </span>
-            <span className="font-display text-base font-semibold text-foreground">
+            <span className="font-display text-base font-bold text-slate-900">
               Campus Pulse
             </span>
           </Link>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className="text-sm leading-relaxed text-slate-600">
             The event operations layer for {COLLEGE_NAME}. Registrations,
             passes, check-ins, certificates and analytics in a single place.
           </p>
@@ -47,13 +47,13 @@ export function SiteFooter() {
         <div className="flex flex-wrap gap-12">
           {columns.map((column) => (
             <div key={column.title} className="flex flex-col gap-3">
-              <p className="text-sm font-medium">{column.title}</p>
+              <p className="text-sm font-semibold text-slate-900">{column.title}</p>
               <ul className="flex flex-col gap-2">
                 {column.items.map((item) => (
                   <li key={item.label}>
                     <Link
                       to={item.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-sm text-slate-700 hover:text-slate-950 font-medium transition-colors"
                     >
                       {item.label}
                     </Link>

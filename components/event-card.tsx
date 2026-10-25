@@ -42,7 +42,7 @@ export function EventCard({
   const seatsLeft = Math.max(0, event.capacity - seatsTaken)
 
   return (
-    <Card className="group flex flex-col gap-0 overflow-hidden p-0 transition-all hover:-translate-y-0.5 hover:shadow-md rounded-2xl border">
+    <Card className="group flex flex-col gap-0 overflow-hidden p-0 transition-all hover:-translate-y-0.5 rounded-2xl border border-white/60 bg-white/70 shadow-sm backdrop-blur-md">
       <div className="relative aspect-[16/7.5] overflow-hidden">
         <img
           src={event.image || '/events/tech-fest.png'}
@@ -52,29 +52,29 @@ export function EventCard({
           }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
-        <div className="absolute top-2 left-2 flex flex-col items-center rounded-lg bg-background/90 px-2 py-0.5 text-center backdrop-blur">
-          <span className="font-display text-sm leading-none font-bold">
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+        <div className="absolute top-2.5 left-2.5 flex flex-col items-center rounded-lg bg-white/80 border border-white/60 px-2 py-0.5 text-center backdrop-blur shadow-xs">
+          <span className="font-display text-sm leading-none font-bold text-slate-900">
             {dayOfMonth(event.date)}
           </span>
-          <span className="text-[8px] font-medium tracking-wide text-muted-foreground uppercase">
+          <span className="text-[8px] font-semibold tracking-wide text-slate-600 uppercase">
             {monthLabel(event.date)}
           </span>
         </div>
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+        <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1">
           <Badge
             variant="outline"
-            className={cn('backdrop-blur text-[9px] py-0 px-1.5 h-5', categoryStyles[event.category])}
+            className={cn('backdrop-blur text-[9px] py-0 px-1.5 h-5 bg-white/80 border-white/60', categoryStyles[event.category])}
           >
             {event.category}
           </Badge>
           {event.status === 'live' && (
-            <Badge className="bg-destructive/90 text-background text-[9px] py-0 px-1.5 h-5">
+            <Badge className="bg-destructive/90 text-white text-[9px] py-0 px-1.5 h-5 shadow-xs">
               Live now
             </Badge>
           )}
           {registered && (
-            <Badge variant="secondary" className="backdrop-blur text-[9px] py-0 px-1.5 h-5">
+            <Badge variant="secondary" className="backdrop-blur text-[9px] py-0 px-1.5 h-5 bg-emerald-100/90 text-emerald-800 border-emerald-200 shadow-xs">
               <CheckCircle2Icon className="size-2.5" />
               Registered
             </Badge>
@@ -82,29 +82,29 @@ export function EventCard({
         </div>
       </div>
 
-      <CardHeader className="gap-0.5 px-3.5 pt-2.5 pb-0.5">
-        <CardTitle className="text-balance text-xs sm:text-sm font-bold leading-tight truncate">
+      <CardHeader className="gap-1 px-5 pt-4 pb-1">
+        <CardTitle className="text-balance text-sm sm:text-base font-bold leading-tight truncate text-slate-900">
           {event.title}
         </CardTitle>
-        <CardDescription className="line-clamp-1 text-[11px] leading-normal text-muted-foreground">
+        <CardDescription className="line-clamp-1 text-xs leading-normal text-slate-500">
           {event.tagline}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-1 flex-col gap-1.5 px-3.5 pt-1.5 pb-2.5">
-        <dl className="flex flex-col gap-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <ClockIcon className="size-3 shrink-0 text-primary/70" />
+      <CardContent className="flex flex-1 flex-col gap-2.5 px-5 pt-2 pb-4">
+        <dl className="flex flex-col gap-1.5 text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <ClockIcon className="size-3.5 shrink-0 text-slate-400" />
             <dd>
               {formatTime(event.startTime)} — {formatTime(event.endTime)}
             </dd>
           </div>
-          <div className="flex items-center gap-1.5">
-            <MapPinIcon className="size-3 shrink-0 text-primary/70" />
+          <div className="flex items-center gap-2">
+            <MapPinIcon className="size-3.5 shrink-0 text-slate-400" />
             <dd className="truncate">{event.venue}</dd>
           </div>
-          <div className="flex items-center gap-1.5">
-            <UsersIcon className="size-3 shrink-0 text-primary/70" />
+          <div className="flex items-center gap-2">
+            <UsersIcon className="size-3.5 shrink-0 text-slate-400" />
             <dd>
               {seatsTaken} registered
               {event.status === 'upcoming' ? ` · ${seatsLeft} seats left` : ''}
@@ -112,29 +112,29 @@ export function EventCard({
           </div>
         </dl>
 
-        <div className="flex flex-col gap-0.5 mt-auto pt-1">
-          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className="flex flex-col gap-1 mt-auto pt-2">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200/60">
             <div
               className="h-full rounded-full bg-primary"
               style={{ width: `${fillRate}%` }}
             />
           </div>
-          <p className="text-[9px] text-muted-foreground">
+          <p className="text-[10px] text-slate-500 font-medium">
             {fillRate}% of {event.capacity} seats filled
           </p>
         </div>
       </CardContent>
 
-      <CardFooter className="mt-auto items-center justify-between gap-2 px-3.5 py-2 border-t border-border/40">
-        <span className="text-[11px] sm:text-xs font-bold text-foreground">{formatFee(event.fee)}</span>
+      <CardFooter className="mt-auto items-center justify-between gap-2 px-5 py-3 border-t border-slate-100/70">
+        <span className="text-xs sm:text-sm font-bold text-slate-900">{formatFee(event.fee)}</span>
         <Button
           size="sm"
           variant={registered ? 'outline' : 'default'}
           render={<Link to={`/events/${event.id}`} />}
-          className="h-7 px-2.5 text-[11px] rounded-lg font-medium"
+          className="h-8 px-3 text-xs rounded-xl font-semibold shadow-xs"
         >
           {registered ? 'View pass' : 'Register'}
-          <ArrowRightIcon className="size-3 ml-0.5" data-icon="inline-end" />
+          <ArrowRightIcon className="size-3.5 ml-1" data-icon="inline-end" />
         </Button>
       </CardFooter>
     </Card>

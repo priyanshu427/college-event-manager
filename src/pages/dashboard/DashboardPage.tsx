@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { AnimatedGradientBg } from '@/components/ui/animated-gradient-bg'
 
 export default function DashboardPage() {
   const {
@@ -406,439 +407,437 @@ export default function DashboardPage() {
     .slice(0, 5)
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <SiteHeader />
+    <AnimatedGradientBg accentColor="neutral">
+      <div className="flex min-h-dvh flex-col">
+        <SiteHeader />
 
-      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl space-y-8">
-          {/* Header Banner */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-gradient-to-r from-purple-500/10 via-primary/10 to-indigo-500/10 p-6 border border-purple-500/20">
-            <div>
-              <Badge className="mb-2 bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-300">
-                <LayoutDashboard className="size-3.5 mr-1.5 inline" />
-                {role === 'admin' ? 'Campus System Admin Portal' : 'Event Organizer Operations'}
-              </Badge>
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                Dashboard & Management Suite
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Logged in as <strong className="text-foreground">{user.name}</strong> ({role.toUpperCase()}) — Connected to live MySQL database
-              </p>
-            </div>
+        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl space-y-8">
+            {/* Header Banner */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-3xl bg-white/30 backdrop-blur-md p-6 border border-white/60 shadow-xs">
+              <div>
+                <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-200/60 font-semibold shadow-xs">
+                  <LayoutDashboard className="size-3.5 mr-1.5 inline" />
+                  {role === 'admin' ? 'Campus System Admin Portal' : 'Event Organizer Operations'}
+                </Badge>
+                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                  Dashboard & Management Suite
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  Logged in as <strong className="text-slate-900">{user.name}</strong> ({role.toUpperCase()}) — Connected to live MySQL database
+                </p>
+              </div>
 
-            <div className="flex items-center gap-3">
-              {/* Create Campus Event Modal */}
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogTrigger render={
-                  <Button className="rounded-xl font-semibold gap-2 shadow-sm">
-                    <Plus className="size-4" />
-                    Create New Event
-                  </Button>
-                } />
-                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-slate-950/95 border border-slate-800 text-white shadow-2xl backdrop-blur-xl">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-bold text-white">Create Campus Event</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateEventSubmit} className="space-y-4 pt-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="eventTitle" className="text-xs font-semibold text-slate-200">Event Title</Label>
-                      <Input
-                        id="eventTitle"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder="e.g. AI & Robotics Buildathon 2026"
-                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="eventTagline" className="text-xs font-semibold text-slate-200">Tagline</Label>
-                      <Input
-                        id="eventTagline"
-                        value={newTagline}
-                        onChange={(e) => setNewTagline(e.target.value)}
-                        placeholder="e.g. Build the future with autonomous AI agents"
-                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3">
+                {/* Create Campus Event Modal */}
+                <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+                  <DialogTrigger render={
+                    <Button className="rounded-xl font-semibold gap-2 shadow-sm cursor-pointer">
+                      <Plus className="size-4" />
+                      Create New Event
+                    </Button>
+                  } />
+                  <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-white border border-slate-200 text-slate-900 shadow-2xl rounded-3xl p-6">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-bold text-slate-900">Create Campus Event</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateEventSubmit} className="space-y-4 pt-2">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-slate-200">Category</Label>
-                        <Select
-                          items={EVENT_CATEGORIES.map((c) => ({ value: c, label: c }))}
-                          value={newCategory}
-                          onValueChange={(val) => setNewCategory(val as EventCategory)}
-                        >
-                          <SelectTrigger className="h-10 text-xs w-full bg-slate-900/60 border border-slate-700/80 text-white data-placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [&_svg]:text-white [&_svg]:opacity-100">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-slate-900 border border-slate-700 text-white shadow-2xl backdrop-blur-md">
-                            <SelectGroup>
-                              {EVENT_CATEGORIES.map((c) => (
-                                <SelectItem key={c} value={c} className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">
-                                  {c}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="eventDate" className="text-xs font-semibold text-slate-200">Date</Label>
+                        <Label htmlFor="eventTitle" className="text-xs font-semibold text-slate-700">Event Title</Label>
                         <Input
-                          id="eventDate"
-                          type="date"
-                          value={newDate}
-                          onChange={(e) => setNewDate(e.target.value)}
-                          style={{ colorScheme: 'dark' }}
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
+                          id="eventTitle"
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          placeholder="e.g. AI & Robotics Buildathon 2026"
+                          className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
                           required
                         />
                       </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label htmlFor="startTime" className="text-xs font-semibold text-slate-200">Start Time</Label>
+                        <Label htmlFor="eventTagline" className="text-xs font-semibold text-slate-700">Tagline</Label>
                         <Input
-                          id="startTime"
-                          type="time"
-                          value={newStartTime}
-                          onChange={(e) => setNewStartTime(e.target.value)}
-                          style={{ colorScheme: 'dark' }}
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
+                          id="eventTagline"
+                          value={newTagline}
+                          onChange={(e) => setNewTagline(e.target.value)}
+                          placeholder="e.g. Build the future with autonomous AI agents"
+                          className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
                           required
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="endTime" className="text-xs font-semibold text-slate-200">End Time</Label>
-                        <Input
-                          id="endTime"
-                          type="time"
-                          value={newEndTime}
-                          onChange={(e) => setNewEndTime(e.target.value)}
-                          style={{ colorScheme: 'dark' }}
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-90"
-                          required
-                        />
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="venue" className="text-xs font-semibold text-slate-200">Venue</Label>
-                        <Input
-                          id="venue"
-                          value={newVenue}
-                          onChange={(e) => setNewVenue(e.target.value)}
-                          placeholder="e.g. Innovation Block, Lab 4"
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="dept" className="text-xs font-semibold text-slate-200">Department</Label>
-                        <Input
-                          id="dept"
-                          value={newDepartment}
-                          onChange={(e) => setNewDepartment(e.target.value)}
-                          placeholder="e.g. Computer Science"
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                          required
-                        />
-                      </div>
-                    </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs font-semibold text-slate-700">Category</Label>
+                          <Select
+                            items={EVENT_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                            value={newCategory}
+                            onValueChange={(val) => setNewCategory(val as EventCategory)}
+                          >
+                            <SelectTrigger className="h-10 text-xs w-full bg-slate-50 border border-slate-300 text-slate-900 data-placeholder:text-slate-400 focus:border-primary focus:bg-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-white border border-slate-200 text-slate-900 shadow-xl">
+                              <SelectGroup>
+                                {EVENT_CATEGORIES.map((c) => (
+                                  <SelectItem key={c} value={c} className="text-slate-900 hover:bg-slate-100 cursor-pointer">
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="capacity" className="text-xs font-semibold text-slate-200">Max Capacity</Label>
-                        <Input
-                          id="capacity"
-                          type="number"
-                          min="1"
-                          value={newCapacity}
-                          onChange={(e) => setNewCapacity(e.target.value)}
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label htmlFor="fee" className="text-xs font-semibold text-slate-200">Registration Fee (Rs.)</Label>
-                        <Input
-                          id="fee"
-                          type="number"
-                          min="0"
-                          value={newFee}
-                          onChange={(e) => setNewFee(e.target.value)}
-                          className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="desc" className="text-xs font-semibold text-slate-200">Description</Label>
-                      <Textarea
-                        id="desc"
-                        rows={3}
-                        value={newDescription}
-                        onChange={(e) => setNewDescription(e.target.value)}
-                        placeholder="Detailed schedule, rules, evaluation criteria, and guidelines..."
-                        className="bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 text-xs leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Image / Poster File Upload Input */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="eventImageFile" className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                        <Upload className="size-3.5 text-indigo-400" />
-                        Event Poster / Cover Image
-                      </Label>
-                      <Input
-                        id="eventImageFile"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            setNewImageFile(file)
-                            setImagePreview(URL.createObjectURL(file))
-                          }
-                        }}
-                        className="bg-slate-900/60 border border-slate-700/80 text-white file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/30 file:text-indigo-200 hover:file:bg-indigo-600/40 text-xs cursor-pointer focus:border-indigo-500"
-                      />
-                      {imagePreview && (
-                        <div className="mt-2 relative rounded-xl overflow-hidden aspect-[16/6] border border-slate-700 shadow-sm">
-                          <img
-                            src={imagePreview}
-                            alt="Selected Event Cover"
-                            className="w-full h-full object-cover"
+                        <div className="space-y-1">
+                          <Label htmlFor="eventDate" className="text-xs font-semibold text-slate-700">Date</Label>
+                          <Input
+                            id="eventDate"
+                            type="date"
+                            value={newDate}
+                            onChange={(e) => setNewDate(e.target.value)}
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white cursor-pointer"
+                            required
                           />
                         </div>
-                      )}
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={isSubmittingEvent}
-                      className="w-full h-11 font-semibold rounded-xl mt-3 shadow-md gap-2 bg-indigo-600 hover:bg-indigo-500 text-white"
-                    >
-                      {isSubmittingEvent ? (
-                        <>
-                          <RefreshCw className="size-4 animate-spin" />
-                          Publishing to MySQL...
-                        </>
-                      ) : (
-                        'Publish Event to Database'
-                      )}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              {/* Close Event & Issue Certificates Modal */}
-              <Dialog open={isCloseModalOpen} onOpenChange={setIsCloseModalOpen}>
-                <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto bg-slate-950 border border-slate-800 text-white rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
-                  <DialogHeader className="space-y-1.5 pb-2 border-b border-slate-800">
-                    <div className="flex items-center gap-2">
-                      <div className="size-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                        <Award className="size-5" />
                       </div>
-                      <div>
-                        <DialogTitle className="text-xl font-bold text-white">
-                          Close Event & Issue Certificates
-                        </DialogTitle>
-                        <p className="text-xs text-slate-400">
-                          {closingEvent?.title}
-                        </p>
-                      </div>
-                    </div>
-                  </DialogHeader>
 
-                  {isLoadingCloseRoster ? (
-                    <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-                      <RefreshCw className="size-6 animate-spin text-amber-500" />
-                      <p className="text-xs font-medium">Fetching verified attendees from roster...</p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleConfirmCloseEvent} className="space-y-5 pt-3">
-                      {closeSuccessMessage && (
-                        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                          <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                          <span>{closeSuccessMessage}</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="startTime" className="text-xs font-semibold text-slate-700">Start Time</Label>
+                          <Input
+                            id="startTime"
+                            type="time"
+                            value={newStartTime}
+                            onChange={(e) => setNewStartTime(e.target.value)}
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white cursor-pointer"
+                            required
+                          />
                         </div>
-                      )}
+                        <div className="space-y-1">
+                          <Label htmlFor="endTime" className="text-xs font-semibold text-slate-700">End Time</Label>
+                          <Input
+                            id="endTime"
+                            type="time"
+                            value={newEndTime}
+                            onChange={(e) => setNewEndTime(e.target.value)}
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white cursor-pointer"
+                            required
+                          />
+                        </div>
+                      </div>
 
-                      {/* Verified Attendees Summary Box */}
-                      {(() => {
-                        const verifiedList = closeRoster.filter((r) => r.attendance_verified)
-                        return (
-                          <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-slate-300">Verified Attendees Eligible for Certificates</span>
-                              <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs">
-                                {verifiedList.length} Checked In
-                              </Badge>
-                            </div>
-                            <p className="text-[11px] text-slate-400 leading-relaxed">
-                              {verifiedList.length > 0
-                                ? 'All verified attendees will automatically receive an official Certificate of Participation. Select podium winners below for special Achievement Certificates.'
-                                : '⚠️ No attendees have verified check-in attendance yet for this event. Attendees must be scanned at the venue via the QR Scanner tab before certificates can be generated.'}
-                            </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="venue" className="text-xs font-semibold text-slate-700">Venue</Label>
+                          <Input
+                            id="venue"
+                            value={newVenue}
+                            onChange={(e) => setNewVenue(e.target.value)}
+                            placeholder="e.g. Innovation Block, Lab 4"
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="dept" className="text-xs font-semibold text-slate-700">Department</Label>
+                          <Input
+                            id="dept"
+                            value={newDepartment}
+                            onChange={(e) => setNewDepartment(e.target.value)}
+                            placeholder="e.g. Computer Science"
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label htmlFor="capacity" className="text-xs font-semibold text-slate-700">Max Capacity</Label>
+                          <Input
+                            id="capacity"
+                            type="number"
+                            min="1"
+                            value={newCapacity}
+                            onChange={(e) => setNewCapacity(e.target.value)}
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="fee" className="text-xs font-semibold text-slate-700">Registration Fee (Rs.)</Label>
+                          <Input
+                            id="fee"
+                            type="number"
+                            min="0"
+                            value={newFee}
+                            onChange={(e) => setNewFee(e.target.value)}
+                            className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="desc" className="text-xs font-semibold text-slate-700">Description</Label>
+                        <Textarea
+                          id="desc"
+                          rows={3}
+                          value={newDescription}
+                          onChange={(e) => setNewDescription(e.target.value)}
+                          placeholder="Detailed schedule, rules, evaluation criteria, and guidelines..."
+                          className="bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-primary focus:bg-white text-xs leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Image / Poster File Upload Input */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="eventImageFile" className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                          <Upload className="size-3.5 text-primary" />
+                          Event Poster / Cover Image
+                        </Label>
+                        <Input
+                          id="eventImageFile"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setNewImageFile(file)
+                              setImagePreview(URL.createObjectURL(file))
+                            }
+                          }}
+                          className="bg-slate-50 border border-slate-300 text-slate-900 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 text-xs cursor-pointer focus:border-primary"
+                        />
+                        {imagePreview && (
+                          <div className="mt-2 relative rounded-xl overflow-hidden aspect-[16/6] border border-slate-200 shadow-sm">
+                            <img
+                              src={imagePreview}
+                              alt="Selected Event Cover"
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                        )
-                      })()}
-
-                      {/* Podium Selection Dropdowns */}
-                      <div className="space-y-4">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400/90">
-                          Select Podium Award Winners (Optional)
-                        </h4>
-
-                        {/* 1st Place */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
-                            <span>🥇 1st Place Winner</span>
-                          </Label>
-                          <select
-                            value={firstPlaceTicket}
-                            onChange={(e) => setFirstPlaceTicket(e.target.value)}
-                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-amber-500 cursor-pointer"
-                          >
-                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
-                            {closeRoster
-                              .filter((r) => r.attendance_verified)
-                              .map((att) => (
-                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
-                                  {att.student_name} ({att.rollNumber || att.ticket_id})
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        {/* 2nd Place */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                            <span>🥈 2nd Place Winner</span>
-                          </Label>
-                          <select
-                            value={secondPlaceTicket}
-                            onChange={(e) => setSecondPlaceTicket(e.target.value)}
-                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
-                          >
-                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
-                            {closeRoster
-                              .filter((r) => r.attendance_verified && r.ticket_id !== firstPlaceTicket)
-                              .map((att) => (
-                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
-                                  {att.student_name} ({att.rollNumber || att.ticket_id})
-                                </option>
-                              ))}
-                          </select>
-                        </div>
-
-                        {/* 3rd Place */}
-                        <div className="space-y-1.5">
-                          <Label className="text-xs font-semibold text-amber-600 dark:text-amber-500 flex items-center gap-1.5">
-                            <span>🥉 3rd Place Winner</span>
-                          </Label>
-                          <select
-                            value={thirdPlaceTicket}
-                            onChange={(e) => setThirdPlaceTicket(e.target.value)}
-                            className="w-full h-10 px-3 text-xs rounded-xl bg-slate-900 border border-slate-700/80 text-white focus:outline-none focus:border-amber-600 cursor-pointer"
-                          >
-                            <option value="" className="bg-slate-900 text-slate-400">-- None (Participation Only) --</option>
-                            {closeRoster
-                              .filter(
-                                (r) =>
-                                  r.attendance_verified &&
-                                  r.ticket_id !== firstPlaceTicket &&
-                                  r.ticket_id !== secondPlaceTicket,
-                              )
-                              .map((att) => (
-                                <option key={att.ticket_id} value={att.ticket_id} className="bg-slate-900 text-white">
-                                  {att.student_name} ({att.rollNumber || att.ticket_id})
-                                </option>
-                              ))}
-                          </select>
-                        </div>
+                        )}
                       </div>
 
-                      <div className="pt-2">
-                        <Button
-                          type="submit"
-                          disabled={isSubmittingClose}
-                          className="w-full h-11 font-semibold rounded-xl shadow-md gap-2 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white"
-                        >
-                          {isSubmittingClose ? (
-                            <>
-                              <RefreshCw className="size-4 animate-spin" />
-                              Closing Event & Generating Certificates...
-                            </>
-                          ) : (
-                            <>
-                              <Award className="size-4" />
-                              Issue Dynamic Certificates & Complete Event
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isSubmittingEvent}
+                        className="w-full h-11 font-semibold rounded-xl mt-3 shadow-md gap-2 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                      >
+                        {isSubmittingEvent ? (
+                          <>
+                            <RefreshCw className="size-4 animate-spin" />
+                            Publishing to MySQL...
+                          </>
+                        ) : (
+                          'Publish Event to Database'
+                        )}
+                      </Button>
                     </form>
-                  )}
-                </DialogContent>
-              </Dialog>
-            </div>
+                  </DialogContent>
+                </Dialog>
+
+                {/* Close Event & Issue Certificates Modal */}
+                <Dialog open={isCloseModalOpen} onOpenChange={setIsCloseModalOpen}>
+                  <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto bg-white border border-slate-200 text-slate-900 rounded-3xl p-6 shadow-2xl">
+                    <DialogHeader className="space-y-1.5 pb-2 border-b border-slate-200">
+                      <div className="flex items-center gap-2">
+                        <div className="size-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-700">
+                          <Award className="size-5" />
+                        </div>
+                        <div>
+                          <DialogTitle className="text-xl font-bold text-slate-900">
+                            Close Event & Issue Certificates
+                          </DialogTitle>
+                          <p className="text-xs text-slate-500">
+                            {closingEvent?.title}
+                          </p>
+                        </div>
+                      </div>
+                    </DialogHeader>
+
+                    {isLoadingCloseRoster ? (
+                      <div className="py-12 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                        <RefreshCw className="size-6 animate-spin text-amber-500" />
+                        <p className="text-xs font-medium">Fetching verified attendees from roster...</p>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleConfirmCloseEvent} className="space-y-5 pt-3">
+                        {closeSuccessMessage && (
+                          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+                            <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                            <span>{closeSuccessMessage}</span>
+                          </div>
+                        )}
+
+                        {/* Verified Attendees Summary Box */}
+                        {(() => {
+                          const verifiedList = closeRoster.filter((r) => r.attendance_verified)
+                          return (
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-slate-700">Verified Attendees Eligible for Certificates</span>
+                                <Badge className="bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs">
+                                  {verifiedList.length} Checked In
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-slate-600 leading-relaxed">
+                                {verifiedList.length > 0
+                                  ? 'All verified attendees will automatically receive an official Certificate of Participation. Select podium winners below for special Achievement Certificates.'
+                                  : '⚠️ No attendees have verified check-in attendance yet for this event. Attendees must be scanned at the venue via the QR Scanner tab before certificates can be generated.'}
+                              </p>
+                            </div>
+                          )
+                        })()}
+
+                        {/* Podium Selection Dropdowns */}
+                        <div className="space-y-4">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                            Select Podium Award Winners (Optional)
+                          </h4>
+
+                          {/* 1st Place */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-amber-900 flex items-center gap-1.5">
+                              <span>🥇 1st Place Winner</span>
+                            </Label>
+                            <select
+                              value={firstPlaceTicket}
+                              onChange={(e) => setFirstPlaceTicket(e.target.value)}
+                              className="w-full h-10 px-3 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-amber-500 cursor-pointer"
+                            >
+                              <option value="" className="bg-white text-slate-500">-- None (Participation Only) --</option>
+                              {closeRoster
+                                .filter((r) => r.attendance_verified)
+                                .map((att) => (
+                                  <option key={att.ticket_id} value={att.ticket_id} className="bg-white text-slate-900">
+                                    {att.student_name} ({att.rollNumber || att.ticket_id})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+
+                          {/* 2nd Place */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                              <span>🥈 2nd Place Winner</span>
+                            </Label>
+                            <select
+                              value={secondPlaceTicket}
+                              onChange={(e) => setSecondPlaceTicket(e.target.value)}
+                              className="w-full h-10 px-3 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                            >
+                              <option value="" className="bg-white text-slate-500">-- None (Participation Only) --</option>
+                              {closeRoster
+                                .filter((r) => r.attendance_verified && r.ticket_id !== firstPlaceTicket)
+                                .map((att) => (
+                                  <option key={att.ticket_id} value={att.ticket_id} className="bg-white text-slate-900">
+                                    {att.student_name} ({att.rollNumber || att.ticket_id})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+
+                          {/* 3rd Place */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                              <span>🥉 3rd Place Winner</span>
+                            </Label>
+                            <select
+                              value={thirdPlaceTicket}
+                              onChange={(e) => setThirdPlaceTicket(e.target.value)}
+                              className="w-full h-10 px-3 text-xs rounded-xl bg-white border border-slate-300 text-slate-900 focus:outline-none focus:border-amber-600 cursor-pointer"
+                            >
+                              <option value="" className="bg-white text-slate-500">-- None (Participation Only) --</option>
+                              {closeRoster
+                                .filter(
+                                  (r) =>
+                                    r.attendance_verified &&
+                                    r.ticket_id !== firstPlaceTicket &&
+                                    r.ticket_id !== secondPlaceTicket,
+                                )
+                                .map((att) => (
+                                  <option key={att.ticket_id} value={att.ticket_id} className="bg-white text-slate-900">
+                                    {att.student_name} ({att.rollNumber || att.ticket_id})
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <Button
+                            type="submit"
+                            disabled={isSubmittingClose}
+                            className="w-full h-11 font-semibold rounded-xl shadow-md gap-2 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white cursor-pointer"
+                          >
+                            {isSubmittingClose ? (
+                              <>
+                                <RefreshCw className="size-4 animate-spin" />
+                                Closing Event & Generating Certificates...
+                              </>
+                            ) : (
+                              <>
+                                <Award className="size-4" />
+                                Issue Dynamic Certificates & Complete Event
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
           </div>
 
           {/* Quick Metrics Bar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="rounded-2xl border bg-card">
+            <Card className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-xs">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Live Events (MySQL)</p>
-                  <h3 className="text-2xl font-bold text-foreground mt-1">{eventsList.length}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Live Events (MySQL)</p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{eventsList.length}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
                   <Calendar className="size-5" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border bg-card">
+            <Card className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-xs">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Total Registrations</p>
-                  <h3 className="text-2xl font-bold text-foreground mt-1">{totalRegistrations}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Total Registrations</p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{totalRegistrations}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shadow-xs">
                   <Users className="size-5" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border bg-card">
+            <Card className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-xs">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Attendance Verified</p>
-                  <h3 className="text-2xl font-bold text-foreground mt-1">{checkedInCount}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Attendance Verified</p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mt-1">{checkedInCount}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shadow-xs">
                   <CheckCircle2 className="size-5" />
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border bg-card">
+            <Card className="rounded-2xl border border-white/60 bg-white/70 backdrop-blur-md shadow-xs">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground font-medium">Revenue Collected</p>
-                  <h3 className="text-2xl font-bold text-foreground mt-1">Rs. {totalRevenue.toLocaleString()}</h3>
+                  <p className="text-xs text-slate-500 font-medium">Revenue Collected</p>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mt-1">Rs. {totalRevenue.toLocaleString()}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shadow-xs">
                   <DollarSign className="size-5" />
                 </div>
               </CardContent>
@@ -847,14 +846,14 @@ export default function DashboardPage() {
 
           {/* Cleaned Dashboard Tabs: ONLY Event Directory, QR Scanner, Participant Roster */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-            <TabsList className="grid grid-cols-3 rounded-2xl bg-muted/80 p-1.5 border">
-              <TabsTrigger value="events" className="rounded-xl text-xs font-semibold">
+            <TabsList className="grid grid-cols-3 rounded-2xl bg-white/30 p-1.5 border border-white/60 shadow-xs backdrop-blur-md">
+              <TabsTrigger value="events" className="rounded-xl text-xs font-semibold text-slate-700 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Event Directory ({eventsList.length})
               </TabsTrigger>
-              <TabsTrigger value="scanner" className="rounded-xl text-xs font-semibold">
+              <TabsTrigger value="scanner" className="rounded-xl text-xs font-semibold text-slate-700 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 QR Scanner & Check-in
               </TabsTrigger>
-              <TabsTrigger value="roster" className="rounded-xl text-xs font-semibold">
+              <TabsTrigger value="roster" className="rounded-xl text-xs font-semibold text-slate-700 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Participant Roster ({rosterData.length})
               </TabsTrigger>
             </TabsList>
@@ -862,12 +861,12 @@ export default function DashboardPage() {
             {/* TAB 1: LIVE EVENT DIRECTORY & MANAGEMENT */}
             <TabsContent value="events" className="space-y-4">
               {isLoadingEvents ? (
-                <div className="p-12 text-center text-muted-foreground flex items-center justify-center gap-2">
+                <div className="p-12 text-center text-slate-500 flex items-center justify-center gap-2">
                   <RefreshCw className="size-4 animate-spin text-primary" />
                   Loading live events from MySQL database...
                 </div>
               ) : eventsList.length === 0 ? (
-                <div className="p-12 text-center rounded-2xl border border-dashed bg-card/50 text-muted-foreground">
+                <div className="p-12 text-center rounded-2xl border border-dashed border-slate-300 bg-white/80 text-slate-600 shadow-sm">
                   No events found in the database. Click "Create New Event" above to publish one.
                 </div>
               ) : (
@@ -877,7 +876,7 @@ export default function DashboardPage() {
                     const displayImage = event.image_url || event.image || '/events/tech-fest.png'
 
                     return (
-                      <Card key={event.id} className="overflow-hidden rounded-2xl border bg-card hover:shadow-md transition-all">
+                      <Card key={event.id} className="overflow-hidden rounded-2xl border border-white/60 bg-white/70 hover:shadow-md transition-all backdrop-blur-md shadow-xs">
                         {/* Event Card Image */}
                         <div className="relative aspect-[16/7.5] overflow-hidden bg-muted">
                           <img
@@ -888,29 +887,29 @@ export default function DashboardPage() {
                             }}
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           />
-                          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
                             {event.status === 'completed' && (
-                              <Badge className="text-[10px] bg-emerald-600/90 text-white font-semibold backdrop-blur shadow-sm">
+                              <Badge className="text-[10px] bg-emerald-600/90 text-white font-semibold backdrop-blur shadow-xs">
                                 Completed
                               </Badge>
                             )}
-                            <Badge variant="outline" className="text-[10px] bg-background/90 backdrop-blur font-semibold">
+                            <Badge variant="outline" className="text-[10px] bg-white/80 backdrop-blur font-semibold text-slate-800 border-white/60 shadow-xs">
                               {event.category}
                             </Badge>
                           </div>
-                          <div className="absolute bottom-2 left-2">
+                          <div className="absolute bottom-2.5 left-2.5">
                             <Badge className="text-[10px] bg-black/60 backdrop-blur text-white font-medium">
                               {event.date}
                             </Badge>
                           </div>
                         </div>
 
-                        <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-2">
+                        <CardHeader className="p-5 pb-2 flex flex-row items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <CardTitle className="text-base font-bold leading-tight truncate" title={event.title}>
+                            <CardTitle className="text-base font-bold leading-tight truncate text-slate-900" title={event.title}>
                               {event.title}
                             </CardTitle>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{event.tagline || event.department}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{event.tagline || event.department}</p>
                           </div>
                           {/* Trash can delete button */}
                           <Button
@@ -924,10 +923,10 @@ export default function DashboardPage() {
                           </Button>
                         </CardHeader>
 
-                        <CardContent className="p-4 pt-0 space-y-3 text-xs text-muted-foreground">
-                          <div className="flex justify-between border-t pt-2 font-medium text-foreground">
-                            <span>Registrations: {eventRegs.length} / {event.capacity}</span>
-                            <span>Fee: {formatFee(event.fee)}</span>
+                        <CardContent className="p-5 pt-0 space-y-3 text-xs text-slate-500">
+                          <div className="flex justify-between border-t border-slate-100/70 pt-2 font-medium text-slate-600">
+                            <span>Registrations: <strong className="text-slate-900">{eventRegs.length} / {event.capacity}</strong></span>
+                            <span>Fee: <strong className="text-slate-900">{formatFee(event.fee)}</strong></span>
                           </div>
                           <div className="flex flex-col gap-2 pt-1">
                             {/* Close Event & Issue Certificates Button */}
@@ -936,16 +935,16 @@ export default function DashboardPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleOpenCloseModal(event)}
-                                className="w-full text-xs font-semibold gap-1.5 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                                className="w-full text-xs font-semibold gap-1.5 border-emerald-500/40 text-emerald-700 bg-white/50 hover:bg-emerald-500/10 shadow-xs"
                               >
-                                <Award className="size-3.5 text-emerald-500" />
+                                <Award className="size-3.5 text-emerald-600" />
                                 <span>Event Closed · Re-issue / View Awards</span>
                               </Button>
                             ) : (
                               <Button
                                 size="sm"
                                 onClick={() => handleOpenCloseModal(event)}
-                                className="w-full text-xs font-semibold gap-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white shadow-sm"
+                                className="w-full text-xs font-semibold gap-1.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white shadow-xs"
                               >
                                 <Award className="size-3.5" />
                                 <span>Close Event & Issue Certificates</span>
@@ -956,7 +955,7 @@ export default function DashboardPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full text-xs font-semibold gap-1.5"
+                              className="w-full text-xs font-semibold gap-1.5 border-white/60 bg-white/70 backdrop-blur-md text-slate-700 hover:bg-white/90 hover:text-slate-900 shadow-xs"
                               render={<Link to={`/events/${event.id}`} />}
                             >
                               <span>View Live Event Page</span>
@@ -973,13 +972,13 @@ export default function DashboardPage() {
 
             {/* TAB 2: QR SCANNER & AUTO-ATTENDANCE CHECK-IN */}
             <TabsContent value="scanner" className="space-y-4">
-              <Card className="rounded-3xl border max-w-xl mx-auto shadow-sm">
+              <Card className="rounded-3xl border border-white/60 bg-white/70 backdrop-blur-md max-w-xl mx-auto shadow-sm">
                 <CardHeader className="text-center pb-2">
-                  <div className="size-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center mb-2">
+                  <div className="size-14 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center mb-2 shadow-xs">
                     <QrCode className="size-7" />
                   </div>
-                  <CardTitle className="text-xl font-bold">QR Scanner & Check-in</CardTitle>
-                  <p className="text-xs text-muted-foreground">
+                  <CardTitle className="text-xl font-bold text-slate-900">QR Scanner & Check-in</CardTitle>
+                  <p className="text-xs text-slate-500">
                     Auto-attendance recognition active. Type, paste, or scan the participant's{' '}
                     <span className="font-mono text-primary font-semibold">Ticket ID</span> (e.g.{' '}
                     <span className="underline cursor-pointer" onClick={() => handleScanInputChange('SIT-4308AD')}>
@@ -988,7 +987,7 @@ export default function DashboardPage() {
                     ) to verify entry.
                   </p>
                   <div className="pt-2 flex justify-center">
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[11px] font-semibold gap-1.5">
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/30 text-[11px] font-semibold gap-1.5 shadow-xs">
                       <Zap className="size-3 text-emerald-600 animate-pulse" />
                       Auto-Scanner Ready (Organizer RBAC Token Protected)
                     </Badge>
@@ -1001,14 +1000,14 @@ export default function DashboardPage() {
                       value={scanCode}
                       onChange={(e) => handleScanInputChange(e.target.value)}
                       placeholder="Scan QR or Enter Ticket ID (e.g. SIT-4308AD)"
-                      className="font-mono uppercase text-sm h-11 bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                      className="font-mono uppercase text-sm h-11 bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 shadow-none"
                       required
                       autoFocus
                     />
                     <Button
                       type="submit"
                       disabled={isVerifying}
-                      className="h-11 px-6 font-semibold rounded-xl shrink-0 gap-2 shadow-sm"
+                      className="h-11 px-6 font-semibold rounded-xl shrink-0 gap-2 shadow-xs"
                     >
                       {isVerifying ? (
                         <>
@@ -1026,8 +1025,8 @@ export default function DashboardPage() {
 
                   {/* Interactive Quick Scan Simulator for Live Tickets */}
                   {pendingTickets.length > 0 && (
-                    <div className="rounded-xl bg-muted/50 p-3 border text-xs space-y-1.5">
-                      <span className="text-[11px] font-medium text-muted-foreground block">
+                    <div className="rounded-xl bg-white/60 backdrop-blur-sm p-3.5 border border-white/60 text-xs space-y-2">
+                      <span className="text-[11px] font-medium text-slate-500 block">
                         Quick-Simulate Barcode / QR Scan with Pending Ticket:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -1036,7 +1035,7 @@ export default function DashboardPage() {
                             key={t.ticket_id}
                             type="button"
                             onClick={() => handleScanInputChange(t.ticket_id)}
-                            className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-background border hover:bg-primary/10 hover:border-primary transition-colors text-primary"
+                            className="font-mono text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/80 border border-white/60 hover:bg-primary/10 hover:border-primary transition-colors text-primary shadow-xs"
                           >
                             ⚡ {t.ticket_id} ({t.student_name.split(' ')[0]})
                           </button>
@@ -1127,15 +1126,15 @@ export default function DashboardPage() {
 
             {/* TAB 3: PARTICIPANT ROSTER & ATTENDANCE */}
             <TabsContent value="roster" className="space-y-4">
-              <Card className="rounded-3xl border shadow-sm">
+              <Card className="rounded-3xl border border-white/60 bg-white/70 backdrop-blur-md shadow-sm">
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 pb-3">
                   <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-3 size-4 text-slate-400" />
                     <Input
                       value={rosterSearch}
                       onChange={(e) => setRosterSearch(e.target.value)}
                       placeholder="Search student name, roll # or ticket ID..."
-                      className="pl-9 h-10 text-xs bg-slate-900/60 border border-slate-700/80 text-white placeholder-slate-400 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                      className="pl-9 h-10 text-xs bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 shadow-none"
                     />
                   </div>
 
@@ -1148,14 +1147,14 @@ export default function DashboardPage() {
                       value={selectedEventIdFilter}
                       onValueChange={(val) => setSelectedEventIdFilter(val || 'all')}
                     >
-                      <SelectTrigger className="h-10 text-xs min-w-44 bg-slate-900/60 border border-slate-700/80 text-white data-placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 [&_svg]:text-white [&_svg]:opacity-100">
+                      <SelectTrigger className="h-10 text-xs min-w-44 bg-white/70 backdrop-blur-md border border-white/60 text-slate-900 data-placeholder:text-slate-400 focus:border-indigo-500 focus-visible:border-indigo-500 focus-visible:ring-1 focus-visible:ring-indigo-500/50 shadow-none">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border border-slate-700 text-white shadow-2xl backdrop-blur-md">
+                      <SelectContent className="bg-white border-slate-200 text-slate-900 shadow-xl">
                         <SelectGroup>
-                          <SelectItem value="all" className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">All Events</SelectItem>
+                          <SelectItem value="all" className="text-slate-900 hover:bg-slate-100 focus:bg-indigo-600 focus:text-white cursor-pointer">All Events</SelectItem>
                           {eventsList.map((e) => (
-                            <SelectItem key={e.id} value={e.id} className="text-white hover:bg-slate-800 focus:bg-indigo-600 focus:text-white cursor-pointer">{e.title}</SelectItem>
+                            <SelectItem key={e.id} value={e.id} className="text-slate-900 hover:bg-slate-100 focus:bg-indigo-600 focus:text-white cursor-pointer">{e.title}</SelectItem>
                           ))}
                         </SelectGroup>
                       </SelectContent>
@@ -1165,7 +1164,7 @@ export default function DashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => loadRoster(selectedEventIdFilter)}
-                      className="h-10 text-xs gap-1.5"
+                      className="h-10 text-xs gap-1.5 border-white/60 bg-white/70 backdrop-blur-md text-slate-700 hover:bg-white/90 hover:text-slate-900 shadow-xs"
                     >
                       <RefreshCw className={cn('size-3.5', isLoadingRoster && 'animate-spin')} />
                       Refresh
@@ -1174,8 +1173,8 @@ export default function DashboardPage() {
                 </CardHeader>
 
                 <CardContent className="p-0 overflow-x-auto">
-                  <table className="w-full text-left text-xs border-t">
-                    <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-semibold">
+                  <table className="w-full text-left text-xs border-t border-slate-200/60">
+                    <thead className="bg-white/40 text-slate-600 uppercase text-[10px] font-semibold border-b border-slate-200/60">
                       <tr>
                         <th className="p-3">Student Name</th>
                         <th className="p-3">Roll Number</th>
@@ -1183,10 +1182,10 @@ export default function DashboardPage() {
                         <th className="p-3">Attendance Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-slate-100">
                       {filteredRoster.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="p-8 text-center text-muted-foreground text-xs">
+                          <td colSpan={4} className="p-8 text-center text-slate-500 text-xs">
                             {isLoadingRoster ? 'Loading participant roster...' : 'No participant registrations found in MySQL.'}
                           </td>
                         </tr>
@@ -1194,22 +1193,22 @@ export default function DashboardPage() {
                         filteredRoster.map((r) => {
                           const ticketId = r.ticket_id || r.code
                           return (
-                            <tr key={r.id || ticketId} className="hover:bg-muted/40 transition-colors">
+                            <tr key={r.id || ticketId} className="hover:bg-slate-50/80 transition-colors">
                               <td className="p-3">
-                                <div className="font-semibold text-foreground">{r.student_name || r.name}</div>
-                                <div className="text-[10px] text-muted-foreground">{r.email}</div>
+                                <div className="font-semibold text-slate-900">{r.student_name || r.name}</div>
+                                <div className="text-[10px] text-slate-500">{r.email}</div>
                               </td>
-                              <td className="p-3 font-mono font-medium">{r.rollNumber || 'N/A'}</td>
+                              <td className="p-3 font-mono font-medium text-slate-700">{r.rollNumber || 'N/A'}</td>
                               <td className="p-3 font-mono font-bold text-primary">{ticketId}</td>
                               <td className="p-3">
                                 {r.attendance_verified ? (
-                                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-semibold gap-1">
+                                  <Badge className="bg-emerald-100 text-emerald-800 font-semibold gap-1">
                                     <CheckCircle2 className="size-3" />
                                     Checked-In
                                   </Badge>
                                 ) : (
                                   <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 font-semibold gap-1">
+                                    <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-300 font-semibold gap-1">
                                       <Clock className="size-3" />
                                       Pending
                                     </Badge>
@@ -1239,5 +1238,6 @@ export default function DashboardPage() {
 
       <SiteFooter />
     </div>
-  )
+  </AnimatedGradientBg>
+)
 }

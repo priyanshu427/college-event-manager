@@ -3,7 +3,6 @@ import {
   ArrowRightIcon,
   BadgeCheckIcon,
   CalendarCheckIcon,
-  QrCodeIcon,
   ScanLineIcon,
   SparklesIcon,
 } from 'lucide-react'
@@ -51,15 +50,6 @@ export function Hero() {
           >
             Explore events
             <ArrowRightIcon data-icon="inline-end" />
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="h-11 bg-white/80 dark:bg-slate-900/80 px-5 text-sm backdrop-blur-md border-slate-200/80 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 transition-all text-slate-700 dark:text-slate-200"
-            render={<Link to="/dashboard" />}
-          >
-            <QrCodeIcon data-icon="inline-start" className="text-indigo-600 dark:text-indigo-400" />
-            Open organizer dashboard
           </Button>
         </div>
 

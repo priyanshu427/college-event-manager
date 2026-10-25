@@ -38,7 +38,7 @@ export function StatsStrip() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col gap-1.5 p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/60 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+            className="flex flex-col gap-1.5 p-4 sm:p-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 shadow-xs hover:border-slate-300 transition-all"
           >
             <dd
               className={`font-display text-3xl font-bold tracking-tight sm:text-4xl bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}

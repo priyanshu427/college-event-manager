@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 export function CtaBand() {
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pb-20 sm:px-6">
-      <div className="relative isolate overflow-hidden rounded-3xl bg-white/75 dark:bg-slate-900/75 px-6 py-14 ring-1 ring-slate-200/80 dark:ring-slate-800 backdrop-blur-xl border border-indigo-200/50 dark:border-indigo-800/40 shadow-xl sm:px-12">
+      <div className="relative isolate overflow-hidden rounded-3xl bg-white/70 px-6 py-14 border border-white/60 backdrop-blur-xl shadow-sm sm:px-12">
         {/* Soft Pastel Ambient Glows */}
         <div className="absolute -top-24 -right-24 size-72 bg-gradient-to-br from-violet-300/30 via-pink-200/30 to-amber-200/30 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 size-72 bg-gradient-to-tr from-cyan-300/30 via-emerald-200/30 to-sky-200/30 rounded-full blur-3xl pointer-events-none" />
