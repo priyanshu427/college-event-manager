@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   GraduationCap,
   Building2,
-  ShieldCheck,
   Eye,
   EyeOff,
   ArrowRight,
@@ -173,9 +172,7 @@ export function RoleLoginForm({
           name:
             activeRole === 'student'
               ? 'Student User'
-              : activeRole === 'organizer'
-              ? 'Event Organizer'
-              : 'Campus Administrator',
+              : 'Event Organizer',
           email: identifier.includes('@') ? identifier : `${identifier}@sit.edu.in`,
           role: activeRole,
           rollNumber: identifier.toUpperCase(),
@@ -219,17 +216,6 @@ export function RoleLoginForm({
       idLabel: 'Organizer Faculty ID or Email',
       idPlaceholder: 'Enter faculty ID or email',
       demoUser: demoUsers.organizer,
-    },
-    admin: {
-      title: 'System Admin',
-      subtitle: 'Governance, policies & data reset',
-      icon: ShieldCheck,
-      accentGradient: 'from-amber-500 via-rose-500 to-orange-500',
-      badgeBg: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800',
-      buttonBg: 'bg-amber-600 hover:bg-amber-700 text-white shadow-amber-200 dark:shadow-none',
-      idLabel: 'Admin Email or Security Key',
-      idPlaceholder: 'Enter admin email or security key',
-      demoUser: demoUsers.admin,
     },
   }
 
@@ -296,15 +282,15 @@ export function RoleLoginForm({
               <Label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                 Select Portal Role
               </Label>
-              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Select role">
-                {(['student', 'organizer', 'admin'] as Role[]).map((r) => {
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Select role">
+                {(['student', 'organizer'] as Role[]).map((r) => {
                   const isSelected = activeRole === r
                   const Icon = roleConfig[r].icon
                   return (
                     <label
                       key={r}
                       className={cn(
-                        'flex items-center gap-1.5 cursor-pointer rounded-xl py-2 px-2 sm:px-2.5 border transition-all duration-200 select-none text-xs font-medium',
+                        'flex items-center gap-2 cursor-pointer rounded-xl py-2.5 px-3 border transition-all duration-200 select-none text-xs font-medium',
                         isSelected
                           ? 'bg-white border-slate-300 shadow-md ring-2 ring-primary/20 dark:bg-slate-800 dark:border-slate-700'
                           : 'bg-white/40 border-slate-200/80 hover:bg-white/80 dark:bg-slate-900/40 dark:border-slate-800 dark:hover:bg-slate-800/50'
@@ -328,9 +314,9 @@ export function RoleLoginForm({
                       >
                         {isSelected && <div className="size-1.5 rounded-full bg-white animate-in zoom-in-50" />}
                       </div>
-                      <Icon className={cn('size-3.5 shrink-0 hidden sm:inline-block', isSelected ? 'text-primary' : 'text-slate-400')} />
-                      <span className={cn('capitalize text-[11px] font-semibold truncate', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400')}>
-                        {r === 'organizer' ? 'Organizer' : r}
+                      <Icon className={cn('size-4 shrink-0', isSelected ? 'text-primary' : 'text-slate-400')} />
+                      <span className={cn('capitalize text-xs font-semibold truncate', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400')}>
+                        {r === 'organizer' ? 'Organizer' : 'Student'}
                       </span>
                     </label>
                   )
@@ -434,26 +420,6 @@ export function RoleLoginForm({
                     value={secondaryField}
                     onChange={(e) => setSecondaryField(e.target.value)}
                     placeholder="Enter department or club code"
-                    className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal"
-                    autoComplete="off"
-                  />
-                  <KeyRound className="absolute left-2.5 top-2.5 size-3.5 text-slate-600 dark:text-slate-400" />
-                </div>
-              </div>
-            )}
-
-            {activeRole === 'admin' && (
-              <div className="space-y-1">
-                <Label htmlFor="securityKey" className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
-                  Security Passcode / Master Key
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="securityKey"
-                    type="password"
-                    value={secondaryField}
-                    onChange={(e) => setSecondaryField(e.target.value)}
-                    placeholder="Enter security passcode"
                     className="pl-8 bg-white dark:bg-slate-900 text-xs rounded-xl h-9 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal"
                     autoComplete="off"
                   />

@@ -66,12 +66,15 @@ def register_user(req: RegisterRequest, db: Session = Depends(get_db)):
     pwd_hash = hash_password(req.password or "demo1234")
     user_id = f"usr-{uuid.uuid4().hex[:8]}"
 
+    raw_role = (req.role or "student").strip().lower()
+    user_role = "organizer" if raw_role == "organizer" else "student"
+
     new_user = models.User(
         id=user_id,
         name=req.name.strip(),
         email=email_key,
         password_hash=pwd_hash,
-        role=req.role or "student",
+        role=user_role,
         rollNumber=roll_number,
         department=req.deptCode or "Campus Member",
     )
@@ -105,6 +108,9 @@ def login_user(req: LoginRequest, db: Session = Depends(get_db)):
 
     db_user = db.query(models.User).filter(models.User.email == identifier).first()
 
+    raw_role = (req.role or "student").strip().lower()
+    target_role = "organizer" if raw_role == "organizer" else "student"
+
     if not db_user:
         # Create user record in DB for new logins
         user_id = f"usr-{uuid.uuid4().hex[:8]}"
@@ -116,16 +122,16 @@ def login_user(req: LoginRequest, db: Session = Depends(get_db)):
             name=name,
             email=identifier,
             password_hash=pwd_hash,
-            role=req.role or "student",
+            role=target_role,
             rollNumber=req.identifier.upper(),
             department="Sunrise Institute of Technology",
         )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-    elif req.role and req.role.strip().lower() in ["organizer", "admin", "student"]:
-        if db_user.role.lower() != req.role.strip().lower():
-            db_user.role = req.role.strip().lower()
+    elif req.role and target_role in ["organizer", "student"]:
+        if db_user.role.lower() != target_role:
+            db_user.role = target_role
             db.commit()
             db.refresh(db_user)
 

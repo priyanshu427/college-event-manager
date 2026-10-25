@@ -155,12 +155,12 @@ def close_event(
     Closes a campus event and dynamically generates certificates for all verified attendees.
     Optionally assigns podium placement ranks (1st Place, 2nd Place, 3rd Place) based on ticket IDs.
     """
-    # Enforce strict RBAC: ONLY Organizer or Admin can close events
+    # Enforce strict RBAC: ONLY Organizer can close events
     user_role = (current_user.role or "").strip().lower()
-    if user_role not in ["organizer", "admin"]:
+    if user_role != "organizer":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Only organizers or administrators can close events and issue certificates.",
+            detail="Forbidden: Only organizers can close events and issue certificates.",
         )
 
     event = db.query(models.Event).filter(models.Event.id == event_id).first()

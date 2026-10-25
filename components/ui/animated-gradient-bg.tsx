@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 interface AnimatedGradientBgProps {
   children?: React.ReactNode
   className?: string
-  accentColor?: 'student' | 'organizer' | 'admin' | 'neutral'
+  accentColor?: 'student' | 'organizer' | 'neutral'
 }
 
 export function AnimatedGradientBg({
@@ -21,8 +21,6 @@ export function AnimatedGradientBg({
         return 'bg-gradient-to-tr from-emerald-300 via-teal-300 to-cyan-300 opacity-60'
       case 'organizer':
         return 'bg-gradient-to-tr from-indigo-400 via-purple-400 to-pink-400 opacity-60'
-      case 'admin':
-        return 'bg-gradient-to-tr from-amber-300 via-rose-300 to-orange-400 opacity-60'
       default:
         return 'bg-gradient-to-tr from-blue-300 via-indigo-200 to-sky-300 opacity-60'
     }
@@ -34,8 +32,6 @@ export function AnimatedGradientBg({
         return 'bg-gradient-to-br from-cyan-200 via-sky-300 to-blue-300 opacity-60'
       case 'organizer':
         return 'bg-gradient-to-br from-fuchsia-300 via-pink-300 to-purple-300 opacity-60'
-      case 'admin':
-        return 'bg-gradient-to-br from-rose-300 via-amber-200 to-red-300 opacity-60'
       default:
         return 'bg-gradient-to-br from-pink-200 via-purple-200 to-indigo-200 opacity-60'
     }

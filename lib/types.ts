@@ -62,7 +62,7 @@ export type Announcement = {
   read: boolean
 }
 
-export type Role = 'student' | 'organizer' | 'admin'
+export type Role = 'student' | 'organizer'
 
 export type CurrentUser = {
   id?: string

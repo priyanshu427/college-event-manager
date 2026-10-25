@@ -6,8 +6,17 @@ from backend.database import engine, Base
 from backend.routers import events, auth, attendance, organizer, certificates
 from backend import models
 
+from sqlalchemy import text
+
 # Automatically create all database tables on startup
 Base.metadata.create_all(bind=engine)
+
+# Cleanup query to remove any legacy admin accounts
+try:
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM users WHERE role = 'admin'"))
+except Exception as e:
+    print(f"[DB Cleanup] Admin removal query error: {e}")
 
 app = FastAPI(
     title="College Event Manager API",

@@ -338,10 +338,10 @@ async def create_event(
     db: Session = Depends(get_db),
 ):
     user_role = (current_user.role or "").strip().lower()
-    if user_role not in ["organizer", "admin"]:
+    if user_role != "organizer":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Only organizers or administrators can create events.",
+            detail="Forbidden: Only organizers can create events.",
         )
 
     content_type = request.headers.get("content-type", "")
@@ -471,10 +471,10 @@ def delete_event(
     db: Session = Depends(get_db),
 ):
     user_role = (current_user.role or "").strip().lower()
-    if user_role not in ["organizer", "admin"]:
+    if user_role != "organizer":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Only organizers or administrators can delete events.",
+            detail="Forbidden: Only organizers can delete events.",
         )
 
     db_event = db.query(models.Event).filter(models.Event.id == id).first()

@@ -291,7 +291,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Handle Delete Event (Restricted to Organizer/Admin)
+  // Handle Delete Event (Restricted to Organizer)
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
     if (!confirm(`Are you sure you want to permanently delete "${eventTitle}"? This will also remove associated attendee registrations.`)) {
       return
@@ -418,13 +418,13 @@ export default function DashboardPage() {
               <div>
                 <Badge className="mb-2 bg-purple-100 text-purple-800 border-purple-200/60 font-semibold shadow-xs">
                   <LayoutDashboard className="size-3.5 mr-1.5 inline" />
-                  {role === 'admin' ? 'Campus System Admin Portal' : 'Event Organizer Operations'}
+                  Event Organizer Operations
                 </Badge>
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
                   Dashboard & Management Suite
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  Logged in as <strong className="text-slate-900">{user.name}</strong> ({role.toUpperCase()}) — Connected to live MySQL database
+                  Logged in as <strong className="text-slate-900">{user.name}</strong> (ORGANIZER) — Connected to live MySQL database
                 </p>
               </div>
 
@@ -1108,7 +1108,7 @@ export default function DashboardPage() {
                       {scanResult.status === 'forbidden' && (
                         <div className="flex items-center gap-1.5 font-bold text-sm text-rose-700 dark:text-rose-400">
                           <AlertTriangle className="size-4" />
-                          403 Forbidden: Only users with the ORGANIZER or Admin role can verify attendance!
+                          403 Forbidden: Only users with the ORGANIZER role can verify attendance!
                         </div>
                       )}
 

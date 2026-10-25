@@ -16,12 +16,12 @@ def verify_attendance(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Enforce strict RBAC: ONLY Organizer or Admin can verify attendance
+    # Enforce strict RBAC: ONLY Organizer can verify attendance
     user_role = (current_user.role or "").strip().lower()
-    if user_role not in ["organizer", "admin"]:
+    if user_role != "organizer":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Only organizers or administrators can verify attendance.",
+            detail="Forbidden: Only organizers can verify attendance.",
         )
     ticket_code = req.ticket_id.strip()
     if not ticket_code:

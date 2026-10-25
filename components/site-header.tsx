@@ -46,7 +46,7 @@ export function SiteHeader() {
     ...(isLoggedIn && role === 'student'
       ? [{ href: '/my-passes', label: 'My Passes', icon: TicketIcon }]
       : []),
-    ...(isLoggedIn && (role === 'organizer' || role === 'admin')
+    ...(isLoggedIn && role === 'organizer'
       ? [{ href: '/dashboard', label: 'Organizer', icon: LayoutDashboardIcon }]
       : []),
   ]

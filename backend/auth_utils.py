@@ -79,7 +79,7 @@ def get_current_user(
         user = db.query(models.User).filter(models.User.email == user_id).first()
 
     if not user:
-        candidate_role = token_role or ("organizer" if "organizer" in user_id.lower() else ("admin" if "admin" in user_id.lower() else "student"))
+        candidate_role = token_role if token_role in ["organizer", "student"] else ("organizer" if "organizer" in user_id.lower() else "student")
         name_candidate = user_id.split("@")[0].replace(".", " ").title() if "@" in user_id else f"User {user_id[-4:]}"
         user = models.User(
             id=user_id,
@@ -93,7 +93,7 @@ def get_current_user(
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif token_role and token_role.lower() != (user.role or "").lower():
+    elif token_role and token_role.lower() != (user.role or "").lower() and token_role.lower() in ["organizer", "student"]:
         user.role = token_role.lower()
         db.commit()
         db.refresh(user)
@@ -104,3 +104,15 @@ def get_current_user_id(
     current_user: models.User = Depends(get_current_user),
 ) -> str:
     return current_user.id
+
+def require_organizer(
+    current_user: models.User = Depends(get_current_user),
+) -> models.User:
+    role = (current_user.role or "").strip().lower()
+    if role != "organizer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Organizer role required.",
+        )
+    return current_user
+

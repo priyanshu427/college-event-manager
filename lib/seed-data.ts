@@ -44,17 +44,6 @@ export const demoUsers: Record<Role, CurrentUser> = {
     phone: '98765 11223',
     role: 'organizer',
   },
-  admin: {
-    id: 'usr-admin-rajesh',
-    name: 'Dr. Rajesh Varma',
-    email: 'admin.dean@sit.edu.in',
-    college: COLLEGE_NAME,
-    department: 'Office of Dean Academic Affairs',
-    year: 'Administration',
-    rollNumber: 'ADM-DEAN-001',
-    phone: '98765 99000',
-    role: 'admin',
-  },
 }
 
 export const seedEvents: EventItem[] = [

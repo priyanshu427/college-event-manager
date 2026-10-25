@@ -205,7 +205,7 @@ def test_full_flow():
         runner.record(
             "2.3",
             "Login as Organizer ('meera.organizer@sit.edu.in')",
-            res.status_code == 200 and bool(organizer_token) and org_role in ["organizer", "admin"],
+            res.status_code == 200 and bool(organizer_token) and org_role == "organizer",
             f"Organizer token generated, role: '{org_role}'",
         )
     except Exception as e:
