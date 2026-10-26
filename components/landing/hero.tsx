@@ -4,11 +4,8 @@ import {
   BadgeCheckIcon,
   CalendarCheckIcon,
   ScanLineIcon,
-  SparklesIcon,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { COLLEGE_NAME } from '@/lib/seed-data'
 
 const highlights = [
   { icon: ScanLineIcon, label: '6 sec QR check-in', color: 'text-cyan-600 dark:text-cyan-400' },
@@ -19,15 +16,7 @@ const highlights = [
 export function Hero() {
   return (
     <section className="relative isolate overflow-hidden">
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-start gap-6 px-4 pt-14 pb-16 sm:px-6 lg:pt-20 lg:pb-22">
-        <Badge
-          variant="outline"
-          className="h-7.5 border-violet-500/20 bg-white/80 dark:bg-slate-900/80 px-3.5 text-violet-700 dark:text-violet-300 backdrop-blur-md shadow-xs shadow-violet-500/5 font-medium"
-        >
-          <SparklesIcon className="size-3.5 text-violet-500 mr-1.5" />
-          Fest season 2026 · {COLLEGE_NAME}
-        </Badge>
-
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-start gap-6 px-4 pt-12 pb-16 sm:px-6 lg:pt-16 lg:pb-22">
         <h1 className="font-display text-4xl leading-[1.08] font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl max-w-4xl">
           Run every campus event{' '}
           <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">

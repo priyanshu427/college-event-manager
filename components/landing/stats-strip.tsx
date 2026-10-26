@@ -25,20 +25,15 @@ export function StatsStrip() {
       label: 'Verified attendance rate',
       gradient: 'from-emerald-600 to-teal-600',
     },
-    {
-      value: '0',
-      label: 'Paper forms printed',
-      gradient: 'from-amber-600 to-orange-600',
-    },
   ]
 
   return (
     <section className="border-y border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md">
-      <dl className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-4 sm:gap-6 px-4 py-8 sm:px-6 lg:grid-cols-4">
+      <dl className="mx-auto flex flex-wrap justify-center items-center gap-4 sm:gap-6 max-w-5xl px-4 py-8 sm:px-6">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col gap-1.5 p-4 sm:p-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 shadow-xs hover:border-slate-300 transition-all"
+            className="flex flex-col gap-1.5 p-4 sm:p-5 rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 shadow-xs hover:border-slate-300 transition-all w-full sm:w-64 lg:w-72 shrink-0"
           >
             <dd
               className={`font-display text-3xl font-bold tracking-tight sm:text-4xl bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
